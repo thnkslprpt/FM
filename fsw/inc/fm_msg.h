@@ -657,7 +657,7 @@ typedef struct
 typedef struct
 {
     CFE_MSG_FcnCode_t CommandCode;              /**< \brief Command code - identifies the command */
-    uint16            Padding;                  /**< \brief Structure padding to align to 32-bit boundaries */
+    uint16            Padding1;                 /**< \brief Structure padding to align to 32-bit boundaries */
     uint32            DirListOffset;            /**< \brief Starting entry for dir list commands */
     uint32            FileInfoState;            /**< \brief File info state */
     uint32            FileInfoSize;             /**< \brief File info size */
