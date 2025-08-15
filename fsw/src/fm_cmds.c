@@ -911,7 +911,7 @@ bool FM_SetPermissionsCmd(const CFE_SB_Buffer_t *BufPtr)
     FM_ChildQueueEntry_t *CmdArgs       = NULL;
     const char *          CmdText       = "Set Permissions";
     bool                  CommandResult = true;
-    bool                  FilenameState = FM_NAME_IS_INVALID;
+    uint32                FilenameState = FM_NAME_IS_INVALID;
 
     const FM_FilenameAndMode_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_SetPermissionsCmd_t);
 
