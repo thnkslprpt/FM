@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -27,8 +26,9 @@
 
 #include "fm_platform_cfg.h"
 #include "fm_app.h"
+#include "fm_table_utils.h"
+#include "fm_eventids.h"
 #include "fm_tbl.h"
-#include "fm_events.h"
 
 #include <string.h>
 
@@ -43,17 +43,17 @@ CFE_Status_t FM_TableInit(void)
     CFE_Status_t Status;
 
     /* Initialize file system free space table pointer */
-    FM_GlobalData.MonitorTablePtr = NULL;
+    FM_AppData.MonitorTablePtr = NULL;
 
     /* Register the file system free space table - this must succeed! */
-    Status = CFE_TBL_Register(&FM_GlobalData.MonitorTableHandle, FM_TABLE_CFE_NAME, sizeof(FM_MonitorTable_t),
+    Status = CFE_TBL_Register(&FM_AppData.MonitorTableHandle, FM_TABLE_CFE_NAME, sizeof(FM_MonitorTable_t),
                               (CFE_TBL_OPT_SNGL_BUFFER | CFE_TBL_OPT_LOAD_DUMP),
                               (CFE_TBL_CallbackFuncPtr_t)FM_ValidateTable);
 
     if (Status == CFE_SUCCESS)
     {
         /* Make an attempt to load the default table data - OK if this fails */
-        CFE_TBL_Load(FM_GlobalData.MonitorTableHandle, CFE_TBL_SRC_FILE, FM_TABLE_DEF_NAME);
+        CFE_TBL_Load(FM_AppData.MonitorTableHandle, CFE_TBL_SRC_FILE, FM_TABLE_DEF_NAME);
 
         /* Allow cFE a chance to dump, update, etc. */
         FM_AcquireTablePointers();
@@ -194,15 +194,15 @@ void FM_AcquireTablePointers(void)
     CFE_Status_t Status;
 
     /* Allow cFE an opportunity to make table updates */
-    CFE_TBL_Manage(FM_GlobalData.MonitorTableHandle);
+    CFE_TBL_Manage(FM_AppData.MonitorTableHandle);
 
     /* Acquire pointer to file system free space table */
-    Status = CFE_TBL_GetAddress((void *)&FM_GlobalData.MonitorTablePtr, FM_GlobalData.MonitorTableHandle);
+    Status = CFE_TBL_GetAddress((void *)&FM_AppData.MonitorTablePtr, FM_AppData.MonitorTableHandle);
 
     if (Status == CFE_TBL_ERR_NEVER_LOADED)
     {
         /* Make sure we don't try to use the empty table buffer */
-        FM_GlobalData.MonitorTablePtr = NULL;
+        FM_AppData.MonitorTablePtr = NULL;
     }
 }
 
@@ -215,8 +215,8 @@ void FM_AcquireTablePointers(void)
 void FM_ReleaseTablePointers(void)
 {
     /* Release pointer to file system free space table */
-    CFE_TBL_ReleaseAddress(FM_GlobalData.MonitorTableHandle);
+    CFE_TBL_ReleaseAddress(FM_AppData.MonitorTableHandle);
 
     /* Prevent table pointer use while released */
-    FM_GlobalData.MonitorTablePtr = NULL;
+    FM_AppData.MonitorTablePtr = NULL;
 }

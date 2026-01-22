@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -28,10 +27,12 @@
 #ifndef FM_COMPRESSION_H
 #define FM_COMPRESSION_H
 
-#include <common_types.h>
-#include <fm_platform_cfg.h>
+/* ======== */
+/* Includes */
+/* ======== */
 
 #include "cfe.h"
+#include "fm_internal_cfg.h"
 
 /**
  * @brief The state object for a compressor
@@ -48,6 +49,10 @@ typedef struct FM_Compressor_State FM_Compressor_State_t;
  * object depends on the selected implementation.
  */
 typedef struct FM_Decompressor_State FM_Decompressor_State_t;
+
+/* =================== */
+/* Function Prototypes */
+/* =================== */
 
 /**
  * @brief Initialize the compression/decompression service

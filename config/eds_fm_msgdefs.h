@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -19,19 +18,13 @@
 
 /**
  * @file
- *   Specification for the CFS File Manager (FM) Application Performance IDs
+ *   Specification for the FM command and telemetry
+ *   message payload and constant definitions.
  */
-#ifndef FM_PERFIDS_H
-#define FM_PERFIDS_H
+#ifndef EDS_FM_MSGDEFS_H
+#define EDS_FM_MSGDEFS_H
 
-/**
- * \defgroup cfsfmmissioncfg CFS File Manager Mission Configuration
- * \{
- */
-
-#define FM_APPMAIN_PERF_ID    39 /**< \brief Main application performance ID */
-#define FM_CHILD_TASK_PERF_ID 44 /**< \brief Child task performance ID */
-
-/**\}*/
+#include "fm_eds_typedefs.h"
+#include "fm_fcncodes.h"
 
 #endif

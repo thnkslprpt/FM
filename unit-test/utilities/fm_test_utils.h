@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -28,6 +27,18 @@
 #include "fm_msg.h"
 #include "utstubs.h"
 
+/* ====== */
+/* Macros */
+/* ====== */
+
+#define ADD_TEST(test) UtTest_Add(test, FM_Test_Setup, FM_Test_Teardown, #test)
+#define FM_UT_OBJID_1 OS_ObjectIdFromInteger(1)
+#define FM_UT_OBJID_2 OS_ObjectIdFromInteger(2)
+
+/* ======== */
+/* Typedefs */
+/* ======== */
+
 typedef struct
 {
     uint16 EventID;
@@ -37,36 +48,11 @@ typedef struct
 
 extern CFE_EVS_SendEvent_context_t context_CFE_EVS_SendEvent[];
 
-/* Command buffer typedef for any handler */
-typedef union
-{
-    CFE_SB_Buffer_t                Buf;
-    FM_SendHkCmd_t                 SendHkCmd;
-    FM_NoopCmd_t                   NoopCmd;
-    FM_ResetCountersCmd_t          ResetCountersCmd;
-    FM_CopyFileCmd_t               CopyFileCmd;
-    FM_MoveFileCmd_t               MoveFileCmd;
-    FM_RenameFileCmd_t             RenameFileCmd;
-    FM_DeleteFileCmd_t             DeleteFileCmd;
-    FM_DeleteAllFilesCmd_t         DeleteAllFilesCmd;
-    FM_DecompressFileCmd_t         DecompressFileCmd;
-    FM_ConcatFilesCmd_t            ConcatFilesCmd;
-    FM_GetFileInfoCmd_t            GetFileInfoCmd;
-    FM_GetOpenFilesCmd_t           GetOpenFilesCmd;
-    FM_CreateDirectoryCmd_t        CreateDirectoryCmd;
-    FM_DeleteDirectoryCmd_t        DeleteDirectoryCmd;
-    FM_GetDirListFileCmd_t         GetDirListFileCmd;
-    FM_GetDirListPktCmd_t          GetDirListPktCmd;
-    FM_MonitorFilesystemSpaceCmd_t GetFreeSpaceCmd;
-    FM_SetTableStateCmd_t          SetTableStateCmd;
-    FM_SetPermissionsCmd_t         SetPermissionsCmd;
-} UT_CmdBuf_t;
+/* =================== */
+/* Function Prototypes */
+/* =================== */
 
-extern UT_CmdBuf_t UT_CmdBuf;
-
-/* Unit test osal ID, generic w/ no type */
-#define FM_UT_OBJID_1 OS_ObjectIdFromInteger(1)
-#define FM_UT_OBJID_2 OS_ObjectIdFromInteger(2)
+void FM_Test_Verify_Event(uint8 IssuedOrder, uint16 EventId, uint16 EventType, const char* EventText);
 
 void FM_Test_Setup(void);
 

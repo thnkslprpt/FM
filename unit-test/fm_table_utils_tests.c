@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -25,8 +24,10 @@
 #include "cfe.h"
 #include "fm_platform_cfg.h"
 #include "fm_app.h"
+#include "fm_table_utils.h"
+#include "fm_eventids.h"
 #include "fm_tbl.h"
-#include "fm_events.h"
+#include "fm_extern_typedefs.h"
 
 #include <string.h>
 
@@ -112,7 +113,7 @@ void Test_FM_ValidateTable_Success(void)
         {
             Table.Entries[i].Enabled = FM_TABLE_ENTRY_ENABLED;
         }
-        snprintf(Table.Entries[i].Name, OS_MAX_PATH_LEN, "Test");
+        snprintf(Table.Entries[i].Name, CFE_MISSION_MAX_PATH_LEN, "Test");
     }
 
     snprintf(ExpectedEventString, CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
@@ -180,7 +181,7 @@ void Test_FM_ValidateTable_UnusedEntry(void)
         {
             Table.Entries[i].Enabled = FM_TABLE_ENTRY_ENABLED;
         }
-        snprintf(Table.Entries[i].Name, OS_MAX_PATH_LEN, "Test");
+        snprintf(Table.Entries[i].Name, CFE_MISSION_MAX_PATH_LEN, "Test");
     }
     Table.Entries[0].Type = FM_MonitorTableEntry_Type_UNUSED;
 
@@ -226,7 +227,7 @@ void Test_FM_ValidateTable_BadEntryState(void)
             Table.Entries[i].Enabled = FM_TABLE_ENTRY_ENABLED;
         }
 
-        snprintf(Table.Entries[i].Name, OS_MAX_PATH_LEN, "Test");
+        snprintf(Table.Entries[i].Name, CFE_MISSION_MAX_PATH_LEN, "Test");
     }
 
     Table.Entries[0].Type = 99;
@@ -340,7 +341,7 @@ void Test_FM_ValidateTable_NameTooLong(void)
             Table.Entries[i].Enabled = FM_TABLE_ENTRY_ENABLED;
         }
 
-        snprintf(Table.Entries[i].Name, OS_MAX_PATH_LEN, "Test");
+        snprintf(Table.Entries[i].Name, CFE_MISSION_MAX_PATH_LEN, "Test");
     }
 
     memset(Table.Entries[0].Name, 'A', sizeof(Table.Entries[0].Name));
@@ -384,11 +385,11 @@ void Test_FM_AcquireTablePointers_Success(void)
 
     UT_SetDefaultReturnValue(UT_KEY(CFE_TBL_GetAddress), CFE_SUCCESS);
 
-    FM_GlobalData.MonitorTablePtr = &Table;
+    FM_AppData.MonitorTablePtr = &Table;
 
-    FM_AcquireTablePointers();
+    UtAssert_VOIDCALL(FM_AcquireTablePointers());
 
-    UtAssert_NOT_NULL(FM_GlobalData.MonitorTablePtr);
+    UtAssert_NOT_NULL(FM_AppData.MonitorTablePtr);
 }
 
 void Test_FM_AcquireTablePointers_Fail(void)
@@ -397,22 +398,20 @@ void Test_FM_AcquireTablePointers_Fail(void)
 
     UT_SetDefaultReturnValue(UT_KEY(CFE_TBL_GetAddress), CFE_TBL_ERR_NEVER_LOADED);
 
-    FM_GlobalData.MonitorTablePtr = &Table;
+    FM_AppData.MonitorTablePtr = &Table;
 
-    FM_AcquireTablePointers();
+    UtAssert_VOIDCALL(FM_AcquireTablePointers());
 
-    UtAssert_NULL(FM_GlobalData.MonitorTablePtr);
+    UtAssert_NULL(FM_AppData.MonitorTablePtr);
 }
 
 void Test_FM_ReleaseTablePointers(void)
 {
     FM_MonitorTable_t Table;
 
-    FM_GlobalData.MonitorTablePtr = &Table;
+    FM_AppData.MonitorTablePtr = &Table;
 
-    FM_ReleaseTablePointers();
-
-    UtAssert_NULL(FM_GlobalData.MonitorTablePtr);
+    UtAssert_VOIDCALL(FM_ReleaseTablePointers());
 }
 
 /*
@@ -437,10 +436,7 @@ void UtTest_Setup(void)
 
     UtTest_Add(Test_FM_ValidateTable_NameTooLong, FM_Test_Setup, FM_Test_Teardown, "Test_FM_ValidateTable_NameTooLong");
 
-    UtTest_Add(Test_FM_AcquireTablePointers_Success, FM_Test_Setup, FM_Test_Teardown,
-               "Test_FM_AcquireTablePointers_Success");
-
+    UtTest_Add(Test_FM_AcquireTablePointers_Success, FM_Test_Setup, FM_Test_Teardown, "Test_FM_AcquireTablePointers_Success");
     UtTest_Add(Test_FM_AcquireTablePointers_Fail, FM_Test_Setup, FM_Test_Teardown, "Test_FM_AcquireTablePointers_Fail");
-
     UtTest_Add(Test_FM_ReleaseTablePointers, FM_Test_Setup, FM_Test_Teardown, "Test_FM_ReleaseTablePointers");
 }

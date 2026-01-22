@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -22,6 +21,7 @@
  *   Test utility implementations
  */
 #include <stdlib.h>
+#include <stdarg.h>
 #include "fm_app.h"
 
 /* UT includes */
@@ -33,8 +33,6 @@
 
 #define UT_MAX_SENDEVENT_DEPTH 4
 CFE_EVS_SendEvent_context_t context_CFE_EVS_SendEvent[UT_MAX_SENDEVENT_DEPTH];
-
-UT_CmdBuf_t UT_CmdBuf;
 
 void UT_Handler_CFE_EVS_SendEvent(void *UserObj, UT_EntryKey_t FuncKey, const UT_StubContext_t *Context, va_list va)
 {
@@ -60,13 +58,27 @@ void UT_Handler_CFE_EVS_SendEvent(void *UserObj, UT_EntryKey_t FuncKey, const UT
     }
 }
 
+void FM_Test_Verify_Event(uint8 IssuedOrder, uint16 EventId, uint16 EventType, const char* EventText)
+{
+    CFE_EVS_SendEvent_context_t *ctxt = &context_CFE_EVS_SendEvent[IssuedOrder];
+
+    UtAssert_INT32_EQ(ctxt->EventID, EventId);
+    UtAssert_INT32_EQ(ctxt->EventType, EventType);
+
+    UtAssert_StrnCmp(EventText,
+                        ctxt->Spec,
+                        CFE_MISSION_EVS_MAX_MESSAGE_LENGTH,
+                        "Event string expected: '%s'\nEvent string received: '%s'",
+                        EventText,
+                        ctxt->Spec);
+}
+
 void FM_Test_Setup(void)
 {
     UT_ResetState(0);
 
-    memset(&FM_GlobalData, 0, sizeof(FM_GlobalData));
+    memset(&FM_AppData, 0, sizeof(FM_AppData));
     memset(context_CFE_EVS_SendEvent, 0, sizeof(context_CFE_EVS_SendEvent));
-    memset(&UT_CmdBuf, 0, sizeof(UT_CmdBuf));
 
     /* Register custom handlers */
     UT_SetVaHandlerFunction(UT_KEY(CFE_EVS_SendEvent), UT_Handler_CFE_EVS_SendEvent, NULL);

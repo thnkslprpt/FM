@@ -177,10 +177,10 @@
 
   The directory listing file is written as a binary file and contains a cFE file header at the top of
   the file contiguously followed by a directory listing status data structure containing an echo of the
-  command specified directory name (#OS_MAX_PATH_LEN), directory size in bytes (uint32), total number of
+  command specified directory name (#CFE_MISSION_MAX_PATH_LEN), directory size in bytes (uint32), total number of
   file contained in the directory (uint32), and the number of file names written in the directory listing
   file (uint32).  The directory listing is then written contiguously one entry at a time.  Each entry in
-  the directory listing includes for each file in the directory, the name of the file(#OS_MAX_PATH_LEN),
+  the directory listing includes for each file in the directory, the name of the file(#CFE_MISSION_MAX_PATH_LEN),
   file size in bytes (uint32), and last modification time of the file (uint32).  File systems use specific
   time epochs for their time tagging of files.  Since spacecraft systems rarely use an epoch that matches
   a particular file system, a function is used to convert the file system time (in seconds) to spacecraft
@@ -268,7 +268,7 @@
     Is there a limit to the number of files that can be open at one time?
   </B> <BR> <BR> <I>
     There are two levels of limit to the number of open files.  The first limit
-    is defined by the CFE-OSAL configuration element #OS_MAX_NUM_OPEN_FILES and
+    is defined by the CFE-OSAL configuration element #CFE_MISSION_MAX_NUM_FILES and
     must be less than or equal to the second limit which is a value defined in
     a manner specific to the selected operating system.  Note also that certain
     directory access functions (reading directory entries, etc) require opening

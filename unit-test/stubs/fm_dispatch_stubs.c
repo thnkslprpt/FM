@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -28,43 +27,41 @@
 
 /*
  * ----------------------------------------------------
- * Generated stub function for FM_IsValidCmdPktLength()
+ * Generated stub function for FM_ProcessGroundCommand()
  * ----------------------------------------------------
  */
-bool FM_IsValidCmdPktLength(const CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength, uint32 EventID, const char *CmdText)
+void FM_ProcessGroundCommand(const CFE_SB_Buffer_t *BufPtr)
 {
-    UT_GenStub_SetupReturnBuffer(FM_IsValidCmdPktLength, bool);
+    UT_GenStub_AddParam(FM_ProcessGroundCommand, const CFE_SB_Buffer_t *, BufPtr);
 
-    UT_GenStub_AddParam(FM_IsValidCmdPktLength, const CFE_MSG_Message_t *, MsgPtr);
-    UT_GenStub_AddParam(FM_IsValidCmdPktLength, size_t, ExpectedLength);
-    UT_GenStub_AddParam(FM_IsValidCmdPktLength, uint32, EventID);
-    UT_GenStub_AddParam(FM_IsValidCmdPktLength, const char *, CmdText);
-
-    UT_GenStub_Execute(FM_IsValidCmdPktLength, Basic, NULL);
-
-    return UT_GenStub_GetReturnValue(FM_IsValidCmdPktLength, bool);
+    UT_GenStub_Execute(FM_ProcessGroundCommand, Basic, NULL);
 }
 
 /*
  * ----------------------------------------------------
- * Generated stub function for FM_ProcessCmd()
+ * Generated stub function for FM_TaskPipe()
  * ----------------------------------------------------
  */
-void FM_ProcessCmd(const CFE_SB_Buffer_t *BufPtr)
+void FM_TaskPipe(const CFE_SB_Buffer_t *BufPtr)
 {
-    UT_GenStub_AddParam(FM_ProcessCmd, const CFE_SB_Buffer_t *, BufPtr);
+    UT_GenStub_AddParam(FM_TaskPipe, const CFE_SB_Buffer_t *, BufPtr);
 
-    UT_GenStub_Execute(FM_ProcessCmd, Basic, NULL);
+    UT_GenStub_Execute(FM_TaskPipe, Basic, NULL);
 }
 
 /*
  * ----------------------------------------------------
- * Generated stub function for FM_ProcessPkt()
+ * Generated stub function for FM_VerifyCmdLength()
  * ----------------------------------------------------
  */
-void FM_ProcessPkt(const CFE_SB_Buffer_t *BufPtr)
+bool FM_VerifyCmdLength(const CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength)
 {
-    UT_GenStub_AddParam(FM_ProcessPkt, const CFE_SB_Buffer_t *, BufPtr);
+    UT_GenStub_SetupReturnBuffer(FM_VerifyCmdLength, bool);
 
-    UT_GenStub_Execute(FM_ProcessPkt, Basic, NULL);
+    UT_GenStub_AddParam(FM_VerifyCmdLength, const CFE_MSG_Message_t *, MsgPtr);
+    UT_GenStub_AddParam(FM_VerifyCmdLength, size_t, ExpectedLength);
+
+    UT_GenStub_Execute(FM_VerifyCmdLength, Basic, NULL);
+
+    return UT_GenStub_GetReturnValue(FM_VerifyCmdLength, bool);
 }

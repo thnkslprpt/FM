@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -21,11 +20,11 @@
  * @file
  *   Unit specification for the CFS File Manager table structures.
  */
-#ifndef FM_TBL_H
-#define FM_TBL_H
+#ifndef FM_TABLE_UTILS_H
+#define FM_TABLE_UTILS_H
 
 #include "cfe.h"
-#include "fm_msg.h"
+#include "fm_tbl.h"
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -83,7 +82,7 @@ CFE_Status_t FM_ValidateTable(FM_MonitorTable_t *TablePtr);
  *
  *  \par Assumptions, External Events, and Notes:
  *
- *  \sa #FM_GlobalData_t
+ *  \sa #FM_AppData_t
  */
 void FM_AcquireTablePointers(void);
 
@@ -99,7 +98,7 @@ void FM_AcquireTablePointers(void);
  *
  *  \par Assumptions, External Events, and Notes:
  *
- *  \sa #FM_GlobalData_t
+ *  \sa #FM_AppData_t
  */
 void FM_ReleaseTablePointers(void);
 

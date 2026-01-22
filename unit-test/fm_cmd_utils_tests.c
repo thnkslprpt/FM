@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -27,7 +26,8 @@
 #include "fm_app.h"
 #include "fm_child.h"
 #include "fm_perfids.h"
-#include "fm_events.h"
+#include "fm_eventids.h"
+#include "fm_extern_typedefs.h"
 
 /*
  * UT Assert
@@ -128,7 +128,7 @@ void Test_FM_GetOpenFilesData(void)
  * *************************/
 void Test_FM_GetFilenameState(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = {0};
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = {0};
     os_fstat_t     fstat;
     osal_id_t      id = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -148,25 +148,25 @@ void Test_FM_GetFilenameState(void)
 
     /* OS_stat failure, file info false */
     UT_SetDeferredRetcode(UT_KEY(OS_stat), 1, !OS_SUCCESS);
-    FM_GlobalData.FileStatSize = 1;
+    FM_AppData.FileStatSize = 1;
     UtAssert_UINT32_EQ(FM_GetFilenameState(filename, sizeof(filename), false), FM_NAME_IS_NOT_IN_USE);
-    UtAssert_UINT32_EQ(FM_GlobalData.FileStatSize, 1);
+    UtAssert_UINT32_EQ(FM_AppData.FileStatSize, 1);
 
     /* OS_stat failure, file info true */
     UT_SetDeferredRetcode(UT_KEY(OS_stat), 1, !OS_SUCCESS);
     UtAssert_UINT32_EQ(FM_GetFilenameState(filename, sizeof(filename), true), FM_NAME_IS_NOT_IN_USE);
-    UtAssert_UINT32_EQ(FM_GlobalData.FileStatSize, 0);
+    UtAssert_UINT32_EQ(FM_AppData.FileStatSize, 0);
 
     /* File is directory, file info true */
     fstat.FileModeBits = OS_FILESTAT_MODE_DIR;
     fstat.FileSize     = 2;
     UT_SetDataBuffer(UT_KEY(OS_stat), &fstat, sizeof(fstat), false);
     UtAssert_UINT32_EQ(FM_GetFilenameState(filename, sizeof(filename), true), FM_NAME_IS_DIRECTORY);
-    UtAssert_UINT32_EQ(FM_GlobalData.FileStatSize, 2);
+    UtAssert_UINT32_EQ(FM_AppData.FileStatSize, 2);
 
     /* File is file, file info false, no objects */
     UtAssert_UINT32_EQ(FM_GetFilenameState(filename, sizeof(filename), false), FM_NAME_IS_FILE_CLOSED);
-    UtAssert_UINT32_EQ(FM_GlobalData.FileStatSize, 2);
+    UtAssert_UINT32_EQ(FM_AppData.FileStatSize, 2);
 
     /* File is file, undefined object */
     UT_SetDataBuffer(UT_KEY(OS_ForEachObject), &id, sizeof(id), false);
@@ -194,7 +194,7 @@ void Test_FM_GetFilenameState(void)
  * *************************/
 void Test_FM_VerifyNameValid(void)
 {
-    char   filename[OS_MAX_FILE_NAME] = "Filename";
+    char   filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     uint32 eventid                    = 1;
 
     /* Filename not in use */
@@ -214,7 +214,7 @@ void Test_FM_VerifyNameValid(void)
  * *************************/
 void Test_FM_VerifyFileState(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
 
@@ -239,7 +239,7 @@ void Test_FM_VerifyFileState(void)
  * *************************/
 void Test_FM_VerifyFileClosed(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     os_fstat_t     fstat                      = {.FileModeBits = OS_FILESTAT_MODE_DIR};
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -282,7 +282,7 @@ void Test_FM_VerifyFileClosed(void)
  * *************************/
 void Test_FM_VerifyFileExists(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     os_fstat_t     fstat                      = {.FileModeBits = OS_FILESTAT_MODE_DIR};
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -324,7 +324,7 @@ void Test_FM_VerifyFileExists(void)
  * *************************/
 void Test_FM_VerifyFileNoExist(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     os_fstat_t     fstat                      = {.FileModeBits = OS_FILESTAT_MODE_DIR};
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -367,7 +367,7 @@ void Test_FM_VerifyFileNoExist(void)
  * *************************/
 void Test_FM_VerifyFileNotOpen(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     os_fstat_t     fstat                      = {.FileModeBits = OS_FILESTAT_MODE_DIR};
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -409,7 +409,7 @@ void Test_FM_VerifyFileNotOpen(void)
  * *************************/
 void Test_FM_VerifyDirExists(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     os_fstat_t     fstat                      = {.FileModeBits = OS_FILESTAT_MODE_DIR};
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -452,7 +452,7 @@ void Test_FM_VerifyDirExists(void)
  * *************************/
 void Test_FM_VerifyDirNoExist(void)
 {
-    char           filename[OS_MAX_FILE_NAME] = "Filename";
+    char           filename[CFE_MISSION_MAX_FILE_LEN] = "Filename";
     os_fstat_t     fstat                      = {.FileModeBits = OS_FILESTAT_MODE_DIR};
     osal_id_t      id                         = OS_OBJECT_ID_UNDEFINED;
     OS_file_prop_t file_prop;
@@ -501,27 +501,27 @@ void Test_FM_VerifyChildTask(void)
     UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[0].EventID, FM_CHILD_DISABLED_EID_OFFSET);
 
     /* LocalQueueCount equal to FM_CHILD_QUEUE_DEPTH */
-    FM_GlobalData.ChildSemaphore  = FM_UT_OBJID_1;
-    FM_GlobalData.ChildQueueCount = FM_CHILD_QUEUE_DEPTH;
+    FM_AppData.ChildSemaphore  = FM_UT_OBJID_1;
+    FM_AppData.HkTlm.Payload.ChildQueueCount = FM_CHILD_QUEUE_DEPTH;
     UtAssert_BOOL_FALSE(FM_VerifyChildTask(0, "Cmd Text"));
     UtAssert_STUB_COUNT(CFE_EVS_SendEvent, 2);
     UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[1].EventID, FM_CHILD_Q_FULL_EID_OFFSET);
 
     /* LocalQueueCount greater than FM_CHILD_QUEUE_DEPTH */
-    FM_GlobalData.ChildQueueCount = FM_CHILD_QUEUE_DEPTH + 1;
+    FM_AppData.HkTlm.Payload.ChildQueueCount = FM_CHILD_QUEUE_DEPTH + 1;
     UtAssert_BOOL_FALSE(FM_VerifyChildTask(0, "Cmd Text"));
     UtAssert_STUB_COUNT(CFE_EVS_SendEvent, 3);
     UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[2].EventID, FM_CHILD_BROKEN_EID_OFFSET);
 
     /* ChildWriteIndex equal to FM_CHILD_QUEUE_DEPTH */
-    FM_GlobalData.ChildQueueCount = FM_CHILD_QUEUE_DEPTH - 1;
-    FM_GlobalData.ChildWriteIndex = FM_CHILD_QUEUE_DEPTH;
+    FM_AppData.HkTlm.Payload.ChildQueueCount = FM_CHILD_QUEUE_DEPTH - 1;
+    FM_AppData.ChildWriteIndex = FM_CHILD_QUEUE_DEPTH;
     UtAssert_BOOL_FALSE(FM_VerifyChildTask(0, "Cmd Text"));
     UtAssert_STUB_COUNT(CFE_EVS_SendEvent, 4);
     UtAssert_INT32_EQ(context_CFE_EVS_SendEvent[3].EventID, FM_CHILD_BROKEN_EID_OFFSET);
 
     /* Success */
-    FM_GlobalData.ChildWriteIndex = FM_CHILD_QUEUE_DEPTH - 1;
+    FM_AppData.ChildWriteIndex = FM_CHILD_QUEUE_DEPTH - 1;
     UtAssert_BOOL_TRUE(FM_VerifyChildTask(0, "Cmd Text"));
     UtAssert_STUB_COUNT(CFE_EVS_SendEvent, 4);
 }
@@ -532,18 +532,18 @@ void Test_FM_VerifyChildTask(void)
 void Test_FM_InvokeChildTask(void)
 {
     /* Conditions true */
-    FM_GlobalData.ChildWriteIndex = FM_CHILD_QUEUE_DEPTH - 1;
-    FM_GlobalData.ChildSemaphore  = FM_UT_OBJID_1;
+    FM_AppData.ChildWriteIndex = FM_CHILD_QUEUE_DEPTH - 1;
+    FM_AppData.ChildSemaphore  = FM_UT_OBJID_1;
     UtAssert_VOIDCALL(FM_InvokeChildTask());
-    UtAssert_INT32_EQ(FM_GlobalData.ChildWriteIndex, 0);
-    UtAssert_INT32_EQ(FM_GlobalData.ChildQueueCount, 1);
+    UtAssert_INT32_EQ(FM_AppData.ChildWriteIndex, 0);
+    UtAssert_INT32_EQ(FM_AppData.HkTlm.Payload.ChildQueueCount, 1);
     UtAssert_STUB_COUNT(OS_CountSemGive, 1);
 
     /* Conditions false */
-    FM_GlobalData.ChildSemaphore = OS_OBJECT_ID_UNDEFINED;
+    FM_AppData.ChildSemaphore = OS_OBJECT_ID_UNDEFINED;
     UtAssert_VOIDCALL(FM_InvokeChildTask());
-    UtAssert_INT32_EQ(FM_GlobalData.ChildWriteIndex, 1);
-    UtAssert_INT32_EQ(FM_GlobalData.ChildQueueCount, 2);
+    UtAssert_INT32_EQ(FM_AppData.ChildWriteIndex, 1);
+    UtAssert_INT32_EQ(FM_AppData.HkTlm.Payload.ChildQueueCount, 2);
     UtAssert_STUB_COUNT(OS_CountSemGive, 1);
 }
 
@@ -613,7 +613,7 @@ void Test_FM_GetDirectorySpaceEstimate(void)
     uint64      blocks;
     os_dirent_t direntry = {.FileName = "f1"};
     os_fstat_t  fstat;
-    char        longname[OS_MAX_PATH_LEN + 5];
+    char        longname[CFE_MISSION_MAX_PATH_LEN + 5];
 
     memset(&fstat, 0, sizeof(fstat));
 

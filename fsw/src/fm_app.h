@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -17,88 +16,62 @@
  * limitations under the License.
  ************************************************************************/
 
-/**
- * @file
- *   Unit specification for the CFS File Manager Application.
- */
 #ifndef FM_APP_H
 #define FM_APP_H
 
-#include "cfe.h"
-#include "fm_msg.h"
-#include "fm_compression.h"
+/* ======= */
+/* Include */
+/* ======= */
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM -- application global constants                              */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#include "fm_tblstruct.h"
+#include "fm_internal_cfg.h"
+#include "fm_msgstruct.h"
+#include "fm_child.h"
+#include "fm_compression.h"
+#include "cfe.h"
+
+/* ======= */
+/* Globals */
+/* ======= */
 
 /**
- *  \brief Wakeup for FM
- *
- *  \par Description
- *      Wakes up FM every 1 second for routine maintenance whether a
- *      message was received or not.
+ *  \brief Get Directory Listing file statistics structure
  */
-#define FM_SB_TIMEOUT 1000
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM -- application global data structure                         */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+typedef struct
+{
+    char   DirName[CFE_MISSION_MAX_PATH_LEN]; /**< \brief Directory name */
+    uint32 DirEntries;               /**< \brief Number of entries in the directory */
+    uint32 FileEntries;              /**< \brief Number of entries written to output file */
+} FM_DirListFileStats_t;
 
 /**
  *  \brief Application global data structure
  */
 typedef struct
 {
-    FM_MonitorTable_t *MonitorTablePtr;    /**< \brief File System Table Pointer */
-    CFE_TBL_Handle_t   MonitorTableHandle; /**< \brief File System Table Handle */
+    FM_MonitorTable_t *MonitorTablePtr;     /** \brief File System Table Pointer */
+    CFE_TBL_Handle_t   MonitorTableHandle;  /** \brief File System Table Handle */
+    CFE_SB_PipeId_t    CmdPipe;             /** \brief cFE software bus command pipe */
+    CFE_ES_TaskId_t    ChildTaskID;         /** \brief Child task ID */
+    osal_id_t          ChildSemaphore;      /** \brief Child task wakeup counting semaphore */
+    osal_id_t          ChildQueueCountSem;  /** \brief Child queue counter mutex semaphore */
+    uint8              ChildWriteIndex;     /** \brief Array index for next write to command args */
+    uint8              ChildReadIndex;      /** \brief Array index for next read from command args */
 
-    CFE_SB_PipeId_t CmdPipe; /**< \brief cFE software bus command pipe */
+    uint8 Spare8a; /** \brief Placeholder for unused command warning counter */
+    uint8 Spare8b; /** \brief Structure alignment spare */
 
-    CFE_ES_TaskId_t ChildTaskID;        /**< \brief Child task ID */
-    osal_id_t       ChildSemaphore;     /**< \brief Child task wakeup counting semaphore */
-    osal_id_t       ChildQueueCountSem; /**< \brief Child queue counter mutex semaphore */
-
-    uint8 ChildCmdCounter;     /**< \brief Child task command success counter */
-    uint8 ChildCmdErrCounter;  /**< \brief Child task command error counter */
-    uint8 ChildCmdWarnCounter; /**< \brief Child task command warning counter */
-
-    uint8 ChildWriteIndex; /**< \brief Array index for next write to command args */
-    uint8 ChildReadIndex;  /**< \brief Array index for next read from command args */
-    uint8 ChildQueueCount; /**< \brief Number of pending commands in queue */
-
-    uint8 CommandCounter;    /**< \brief Application command success counter */
-    uint8 CommandErrCounter; /**< \brief Application command error counter */
-    uint8 Spare8a;           /**< \brief Placeholder for unused command warning counter */
-
-    uint8 ChildCurrentCC;  /**< \brief Command code currently executing */
-    uint8 ChildPreviousCC; /**< \brief Command code previously executed */
-    uint8 Spare8b;         /**< \brief Structure alignment spare */
-
-    uint32 FileStatTime; /**< \brief Modify time from most recent OS_stat */
-    uint32 FileStatSize; /**< \brief File size from most recent OS_stat */
-    uint32 FileStatMode; /**< \brief File mode from most recent OS_stat (OS_FILESTAT_MODE) */
-
-    FM_DirListFileStats_t DirListFileStats; /**< \brief Get dir list to file statistics structure */
-
-    FM_DirListPkt_t DirListPkt; /**< \brief Get dir list to packet telemetry packet */
-
-    FM_MonitorReportPkt_t
-        MonitorReportPkt; /**< \brief Telemetry packet reporting status of items in the monitor table */
-
-    FM_FileInfoPkt_t FileInfoPkt; /**< \brief Get file info telemetry packet */
-
-    FM_OpenFilesPkt_t OpenFilesPkt; /**< \brief Get open files telemetry packet */
-
-    FM_HousekeepingPkt_t HousekeepingPkt; /**< \brief Application housekeeping telemetry packet */
-
-    char ChildBuffer[FM_CHILD_FILE_BLOCK_SIZE]; /**< \brief Child task file I/O buffer */
-
-    FM_ChildQueueEntry_t ChildQueue[FM_CHILD_QUEUE_DEPTH]; /**< \brief Child task command queue */
+    uint32                FileStatTime;                          /** \brief Modify time from most recent OS_stat */
+    uint32                FileStatSize;                          /** \brief File size from most recent OS_stat */
+    uint32                FileStatMode;                          /** \brief File mode from most recent OS_stat (OS_FILESTAT_MODE) */
+    FM_DirListFileStats_t DirListFileStats;                      /** \brief Get dir list to file statistics structure */
+    FM_DirListPkt_t       DirListPkt;                            /** \brief Get dir list to packet telemetry packet */
+    FM_MonitorReportPkt_t MonitorReportPkt;                      /** \brief Telemetry packet reporting status of items in the monitor table */
+    FM_FileInfoPkt_t      FileInfoPkt;                           /** \brief Get file info telemetry packet */
+    FM_OpenFilesPkt_t     OpenFilesPkt;                          /** \brief Get open files telemetry packet */
+    FM_HkTlm_t            HkTlm;                                 /** \brief Application housekeeping telemetry packet */
+    char                  ChildBuffer[FM_CHILD_FILE_BLOCK_SIZE]; /** \brief Child task file I/O buffer */
+    FM_ChildQueueEntry_t  ChildQueue[FM_CHILD_QUEUE_DEPTH];      /** \brief Child task command queue */
 
     /**
      * \brief State of the embedded decompression routine
@@ -111,7 +84,7 @@ typedef struct
      * This depends on the compression option and may be NULL
      */
     FM_Compressor_State_t *CompressorStatePtr;
-} FM_GlobalData_t;
+} FM_AppData_t;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -134,7 +107,7 @@ typedef struct
  *
  *  \par Assumptions, External Events, and Notes: None
  *
- *  \sa #FM_AppInit, #CFE_ES_RunLoop, #FM_ProcessPkt
+ *  \sa #FM_AppInit, #CFE_ES_RunLoop, #FM_TaskPipe
  */
 void FM_AppMain(void);
 
@@ -160,25 +133,6 @@ void FM_AppMain(void);
  */
 CFE_Status_t FM_AppInit(void);
 
-/**
- *  \brief Housekeeping Request Command Handler
- *
- *  \par Description
- *
- *       Allow CFE Table Services the opportunity to manage the File System
- *       Free Space Table.  This provides a mechanism to receive table updates.
- *
- *       Populate the FM application Housekeeping Telemetry packet.  Timestamp
- *       the packet and send it to ground via the Software Bus.
- *
- *  \par Assumptions, External Events, and Notes: None
- *
- *  \param [in]  BufPtr Pointer to Software Bus command packet.
- *
- *  \sa #FM_SendHkCmd_t, #FM_HousekeepingPkt_t
- */
-void FM_SendHkCmd(const CFE_SB_Buffer_t *BufPtr);
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
 /* FM application global data structure instance                   */
@@ -186,6 +140,6 @@ void FM_SendHkCmd(const CFE_SB_Buffer_t *BufPtr);
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /** \brief File Manager global */
-extern FM_GlobalData_t FM_GlobalData;
+extern FM_AppData_t FM_AppData;
 
 #endif

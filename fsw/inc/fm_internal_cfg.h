@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -19,22 +18,45 @@
 
 /**
  * @file
- *   Specification for the CFS FM application constants
- *   that can be configured from one platform to another
+ *   CFS File Manager (FM) Application Private Config Definitions
+ *
+ * This provides default values for configurable items that are internal
+ * to this module and do NOT affect the interface(s) of this module.  Changes
+ * to items in this file only affect the local module and will be transparent
+ * to external entities that are using the public interface(s).
+ *
+ * @note This file may be overridden/superceded by mission-provided defintions
+ * either by overriding this header or by generating definitions from a command/data
+ * dictionary tool.
  */
-#ifndef FM_PLATFORM_CFG_H
-#define FM_PLATFORM_CFG_H
+
+#ifndef FM_INTERNAL_CFG_H
+#define FM_INTERNAL_CFG_H
+
+/* ======== */
+/* Includes */
+/* ======== */
+
+#include "cfe.h"
+#include "fm_internal_cfg_values.h"
+
+/* ====== */
+/* Macros */
+/* ====== */
 
 /**
- * \defgroup cfsfmplatformcfg CFS File Manager Platform Configuration
+ * \defgroup cfsfmplatformcfg CFS File Manager Internal Configuration
  * \{
  */
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM platform configuration parameters - application definitions  */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/**
+ * \brief FM directory entry definitions
+ */
+#define FM_THIS_DIRECTORY                    FM_INTERNAL_CFGVAL(THIS_DIRECTORY)
+#define DEFAULT_FM_INTERNAL_THIS_DIRECTORY   "."
+#define FM_PARENT_DIRECTORY                  FM_INTERNAL_CFGVAL(PARENT_DIRECTORY)
+#define DEFAULT_FM_INTERNAL_PARENT_DIRECTORY ".."
 
 /**
  * \brief File Manager Application Name
@@ -51,7 +73,8 @@
  *       no limits on the definition.  Refer to CFE Executive Services
  *       for specific information on limits related to application names.
  */
-#define FM_APP_NAME "FM"
+#define FM_APP_NAME                  FM_INTERNAL_CFGVAL(APP_NAME)
+#define DEFAULT_FM_INTERNAL_APP_NAME "FM"
 
 /**
  * \brief File Manager Command Pipe Name
@@ -65,7 +88,8 @@
  *       no limits on the definition.  Refer to CFE Software Bus Services
  *       for specific information on limits related to pipe names.
  */
-#define FM_APP_PIPE_NAME "FM_CMD_PIPE"
+#define FM_APP_PIPE_NAME                  FM_INTERNAL_CFGVAL(APP_PIPE_NAME)
+#define DEFAULT_FM_INTERNAL_APP_PIPE_NAME "FM_CMD_PIPE"
 
 /**
  * \brief File Manager Command Pipe Depth
@@ -80,7 +104,8 @@
  *       It is recommended that this value be no less than 4 and
  *       no greater than 20 packets, but this is not enforced by FM.
  */
-#define FM_APP_PIPE_DEPTH 10
+#define FM_APP_PIPE_DEPTH                  FM_INTERNAL_CFGVAL(APP_PIPE_DEPTH)
+#define DEFAULT_FM_INTERNAL_APP_PIPE_DEPTH 10
 
 /**
  * \brief Mission specific version number for FM application
@@ -96,94 +121,138 @@
  *       Must be defined as a numeric value that is greater than
  *       or equal to zero.
  */
-#define FM_MISSION_REV 0
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM platform configuration parameters - output file definitions  */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#define FM_MISSION_REV                  FM_INTERNAL_CFGVAL(MISSION_REV)
+#define DEFAULT_FM_INTERNAL_MISSION_REV 0
 
 /**
- * \brief Default Directory List Output Filename
+ * \brief Child file stat sleep
  *
  *  \par Description:
- *       This definition is the default output filename used by the Get
- *       Directory List to File command handler when the output filename
- *       is not provided.  The default filename is used whenever the
- *       commanded output filename is the empty string.
+ *       OS_stat is a CPU intensive call. FM uses the OS_stat call to query a
+ *       file’s size, date, and mode when setting up directory listings.
+ *       Querying a large number of files and/or files large in size when
+ *       processing directory listing commands can cause FM to hog the CPU. To
+ *       mitigate this, options to sleep a configurable number of milliseconds
+ *       between calls to OS_stat for a configurable number of files
+ *       in a directory listing is provided. A large sleep cycle will not hang the CPU
+ *       but it may take a long time for directory listing to complete. A shorter
+ *       sleep cycle will speed up the directory listing commands but may cause
+ *       FM to hog the CPU.
  *
+ *       FM_CHILD_STAT_SLEEP_MS: The number of milliseconds to sleep each
+ *       cycle. One cycle is FM_CHILD_STAT_SLEEP_FILECOUNT.
+ *
+ *       FM_CHILD_STAT_SLEEP_FILECOUNT: The number of files to process (OS_stat) before
+ *       sleeping FM_CHILD_STAT_SLEEP_MS.
+ *       Works in tandem with FM_CHILD_STAT_SLEEP_MS to reduce CPU hogging
+ *       while allowing slightly more customization to balance time the operator is waiting to
+ *       get data back from a directory listing versus FM hogging the CPU with calls to OS_stat
+ *
+ *       In short:
+ *       High SLEEP_MS means less CPU hogging by FM but a longer time to process a dir listing command
+ *       Low SLEEP_MS means more potential CPU hogging by FM but shorter time to process a dir listing command
+ *       High FILECOUNT means more potential CPU hogging by FM but a shorter time to process a dir listing command
+ *       Low FILECOUNT means less CPU hogging by FM but longer time to process a dir listing command
  *  \par Limits:
- *       The FM application does not place a limit on this configuration
- *       parameter, however the symbol must be defined and the name will
- *       be subject to the same verification tests as a commanded output
- *       filename.  Set this parameter to the empty string if no default
- *       filename is desired.
+ *       The default is zero unless the mission needs require them to be changed.
+ *
  */
-#define FM_DIR_LIST_FILE_DEFNAME "/ram/fm_dirlist.out"
+#define FM_CHILD_STAT_SLEEP_MS                         FM_INTERNAL_CFGVAL(CHILD_STAT_SLEEP_MS)
+#define DEFAULT_FM_INTERNAL_CHILD_STAT_SLEEP_MS        0
+#define FM_CHILD_STAT_SLEEP_FILECOUNT                  FM_INTERNAL_CFGVAL(CHILD_STAT_SLEEP_FILECOUNT)
+#define DEFAULT_FM_INTERNAL_CHILD_STAT_SLEEP_FILECOUNT 0
 
 /**
- * \brief Maximum Directory List Output File Entries
+ * \brief Child Task Command Queue Entry Count
  *
  *  \par Description:
- *       This definition sets the upper limit for the number of directory
- *       entries that may be written to a Directory List output file.
- *       Directory List files are variable length, based on the number of
- *       directory entries actually written to the file.  There may zero
- *       entries written to the file if the directory is empty.  For most
- *       environments, this definition will play no role at all, as it
- *       will be set to a number much larger than the count of files that
- *       will ever exist in any directory at one time.
+ *       This definition sets the array depth for the command arguments queue in
+ *       the FM main task to FM child task handshake interface.  The value sets
+ *       the upper limit for the number of commands that can be waiting in the
+ *       queue to be processed by the low priority FM child task.  A multi-entry
+ *       command queue prevents the occasional slow command from being rejected
+ *       because the child task has not yet completed the previous slow command.
  *
  *  \par Limits:
- *       The FM application limits this value to be no less than 100 and
- *       no greater than 10000.
+ *       The FM application limits this value to be no less than 1 and no greater
+ *       than 10.  There must be at least one because this is the method for
+ *       passing command arguments from the parent to the child task.  The upper
+ *       limit is arbitrary.
  */
-#define FM_DIR_LIST_FILE_ENTRIES 3000
+#define FM_CHILD_QUEUE_DEPTH                  FM_INTERNAL_CFGVAL(CHILD_QUEUE_DEPTH)
+#define DEFAULT_FM_INTERNAL_CHILD_QUEUE_DEPTH 3
 
 /**
- * \brief Directory List Output File Header Sub-Type
+ * \brief Child Task Name - cFE object name
  *
  *  \par Description:
- *       This definition sets the cFE File Header sub-type value for FM
- *       Directory List data files.  The value may be used to differentiate
- *       FM Directory List files from other data files.
+ *       This definition sets the FM child task object name.  The task object
+ *       name is required during child task creation by cFE Executive Services.
  *
  *  \par Limits:
- *       The FM application places no limits on this unsigned 32 bit value.
+ *       FM requires that this name be defined, but otherwise places
+ *       no limits on the definition.  Refer to CFE Executive Services
+ *       for specific information on limits related to object names.
  */
-#define FM_DIR_LIST_FILE_SUBTYPE 12345
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM platform configuration parameters - TLM packet definitions   */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#define FM_CHILD_TASK_NAME                  FM_INTERNAL_CFGVAL(CHILD_TASK_NAME)
+#define DEFAULT_FM_INTERNAL_CHILD_TASK_NAME "FM_CHILD_TASK"
 
 /**
- * \brief Directory List Telemetry Packet Entry Count
+ * \brief Child Task Stack Size
  *
  *  \par Description:
- *       This definition sets the number of directory entries contained
- *       in the Directory List telemetry packet.  The command handler will
- *       read directory entries until reaching the index of the start entry
- *       (set via command argument) and then continue to read
- *       directory entries and populate the telemtry packet until there are
- *       either no more unread directory entries or until the telemetry
- *       packet is full.
+ *       This definition sets the size in bytes of the FM child task
+ *       stack.  It is highly recommended that this assignment be made
+ *       by someone familiar with the system requirements for tasks
+ *       running on the target platform.
  *
  *  \par Limits:
- *       The FM application limits this value to be no less than 10 and
- *       and no greater than 100. The number of directory entries in the
- *       telemetry packet will in large part determine the packet size.
+ *       The FM application limits this value to be no less than 2048
+ *       and no greater than 20480.  These limits are purely arbitrary
+ *       and may need to be modified for specific platforms.
  */
-#define FM_DIR_LIST_PKT_ENTRIES 20
+#define FM_CHILD_TASK_STACK_SIZE                  FM_INTERNAL_CFGVAL(CHILD_TASK_STACK_SIZE)
+#define DEFAULT_FM_INTERNAL_CHILD_TASK_STACK_SIZE 20480
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM platform configuration parameters - child task definitions   */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/**
+ * \brief Child Task Execution Priority
+ *
+ *  \par Description:
+ *       This parameter sets the execution priority for the FM child task.
+ *       It is highly recommended that this assignment be made by someone
+ *       familiar with the system requirements for tasks running on the
+ *       target platform. Note: This parameter is VxWorks® specific. Not
+ *       all operating systems set task priority this way.
+ *
+ *  \par Limits:
+ *       Value to be no less than 1 and no greater than 255.
+ *
+ *  \par Priority Values:
+ *       Note that a small value has higher priority than a large value.
+ *       Thus, 100 is higher priority than 150. It is also necessary to
+ *       ensure that a child task has lower priority than its parent.
+ *       It should be clear that a child task that runs ahead of its
+ *       parent defeats the purpose of having a child task to run in
+ *       the background.
+ */
+#define FM_CHILD_TASK_PRIORITY                  FM_INTERNAL_CFGVAL(CHILD_TASK_PRIORITY)
+#define DEFAULT_FM_INTERNAL_CHILD_TASK_PRIORITY 205
+
+/**
+ * \brief Child Task Semaphore Name - cFE object name
+ *
+ *  \par Description:
+ *       This definition sets the FM child task semaphore object name.
+ *       The semaphore object name is required during semaphore creation
+ *       by cFE Executive Services.
+ *
+ *  \par Limits:
+ *       FM requires that this name be defined, but otherwise places
+ *       no limits on the definition.  Refer to CFE Executive Services
+ *       for specific information on limits related to object names.
+ */
+#define FM_CHILD_SEM_NAME                  FM_INTERNAL_CFGVAL(CHILD_SEM_NAME)
+#define DEFAULT_FM_INTERNAL_CHILD_SEM_NAME "FM_CHILD_SEM"
 
 /**
  * \brief Child Task File I/O Control Settings
@@ -225,141 +294,25 @@
  *       no greater than 100 ms.  The value zero generally means a very short
  *       task delay - refer to the target platform documentation for specifics.
  */
-#define FM_CHILD_FILE_BLOCK_SIZE 2048
-#define FM_CHILD_FILE_LOOP_COUNT 16
-#define FM_CHILD_FILE_SLEEP_MS   20
+#define FM_CHILD_FILE_BLOCK_SIZE                  FM_INTERNAL_CFGVAL(CHILD_FILE_BLOCK_SIZE)
+#define DEFAULT_FM_INTERNAL_CHILD_FILE_BLOCK_SIZE 2048
+#define FM_CHILD_FILE_LOOP_COUNT                  FM_INTERNAL_CFGVAL(CHILD_FILE_LOOP_COUNT)
+#define DEFAULT_FM_INTERNAL_CHILD_FILE_LOOP_COUNT 16
+#define FM_CHILD_FILE_SLEEP_MS                    FM_INTERNAL_CFGVAL(CHILD_FILE_SLEEP_MS)
+#define DEFAULT_FM_INTERNAL_CHILD_FILE_SLEEP_MS   20
 
 /**
- * \brief Child file stat sleep
+ *  \brief Wakeup for FM
  *
- *  \par Description:
- *       OS_stat is a CPU intensive call. FM uses the OS_stat call to query a
- *       file’s size, date, and mode when setting up directory listings.
- *       Querying a large number of files and/or files large in size when
- *       processing directory listing commands can cause FM to hog the CPU. To
- *       mitigate this, options to sleep a configurable number of milliseconds
- *       between calls to OS_stat for a configurable number of files
- *       in a directory listing is provided. A large sleep cycle will not hang the CPU
- *       but it may take a long time for directory listing to complete. A shorter
- *       sleep cycle will speed up the directory listing commands but may cause
- *       FM to hog the CPU.
- *
- *       FM_CHILD_STAT_SLEEP_MS: The number of milliseconds to sleep each
- *       cycle. One cycle is FM_CHILD_STAT_SLEEP_FILECOUNT.
- *
- *       FM_CHILD_STAT_SLEEP_FILECOUNT: The number of files to process (OS_stat) before
- *       sleeping FM_CHILD_STAT_SLEEP_MS.
- *       Works in tandem with FM_CHILD_STAT_SLEEP_MS to reduce CPU hogging
- *       while allowing slightly more customization to balance time the operator is waiting to
- *       get data back from a directory listing versus FM hogging the CPU with calls to OS_stat
- *
- *       In short:
- *       High SLEEP_MS means less CPU hogging by FM but a longer time to process a dir listing command
- *       Low SLEEP_MS means more potential CPU hogging by FM but shorter time to process a dir listing command
- *       High FILECOUNT means more potential CPU hogging by FM but a shorter time to process a dir listing command
- *       Low FILECOUNT means less CPU hogging by FM but longer time to process a dir listing command
- *  \par Limits:
- *       The default is zero unless the mission needs require them to be changed.
- *
+ *  \par Description
+ *      Wakes up FM every 1 second for routine maintenance whether a
+ *      message was received or not.
  */
-#define FM_CHILD_STAT_SLEEP_MS        0
-#define FM_CHILD_STAT_SLEEP_FILECOUNT 0
+#define FM_SB_TIMEOUT                  FM_INTERNAL_CFGVAL(SB_TIMEOUT)
+#define DEFAULT_FM_INTERNAL_SB_TIMEOUT 1000
 
 /**
- * \brief Child Task Command Queue Entry Count
- *
- *  \par Description:
- *       This definition sets the array depth for the command arguments queue in
- *       the FM main task to FM child task handshake interface.  The value sets
- *       the upper limit for the number of commands that can be waiting in the
- *       queue to be processed by the low priority FM child task.  A multi-entry
- *       command queue prevents the occasional slow command from being rejected
- *       because the child task has not yet completed the previous slow command.
- *
- *  \par Limits:
- *       The FM application limits this value to be no less than 1 and no greater
- *       than 10.  There must be at least one because this is the method for
- *       passing command arguments from the parent to the child task.  The upper
- *       limit is arbitrary.
- */
-#define FM_CHILD_QUEUE_DEPTH 3
-
-/**
- * \brief Child Task Name - cFE object name
- *
- *  \par Description:
- *       This definition sets the FM child task object name.  The task object
- *       name is required during child task creation by cFE Executive Services.
- *
- *  \par Limits:
- *       FM requires that this name be defined, but otherwise places
- *       no limits on the definition.  Refer to CFE Executive Services
- *       for specific information on limits related to object names.
- */
-#define FM_CHILD_TASK_NAME "FM_CHILD_TASK"
-
-/**
- * \brief Child Task Stack Size
- *
- *  \par Description:
- *       This definition sets the size in bytes of the FM child task
- *       stack.  It is highly recommended that this assignment be made
- *       by someone familiar with the system requirements for tasks
- *       running on the target platform.
- *
- *  \par Limits:
- *       The FM application limits this value to be no less than 2048
- *       and no greater than 20480.  These limits are purely arbitrary
- *       and may need to be modified for specific platforms.
- */
-#define FM_CHILD_TASK_STACK_SIZE 20480
-
-/**
- * \brief Child Task Execution Priority
- *
- *  \par Description:
- *       This parameter sets the execution priority for the FM child task.
- *       It is highly recommended that this assignment be made by someone
- *       familiar with the system requirements for tasks running on the
- *       target platform. Note: This parameter is VxWorks® specific. Not
- *       all operating systems set task priority this way.
- *
- *  \par Limits:
- *       Value to be no less than 1 and no greater than 255.
- *
- *  \par Priority Values:
- *       Note that a small value has higher priority than a large value.
- *       Thus, 100 is higher priority than 150. It is also necessary to
- *       ensure that a child task has lower priority than its parent.
- *       It should be clear that a child task that runs ahead of its
- *       parent defeats the purpose of having a child task to run in
- *       the background.
- */
-#define FM_CHILD_TASK_PRIORITY 205
-
-/**
- * \brief Child Task Semaphore Name - cFE object name
- *
- *  \par Description:
- *       This definition sets the FM child task semaphore object name.
- *       The semaphore object name is required during semaphore creation
- *       by cFE Executive Services.
- *
- *  \par Limits:
- *       FM requires that this name be defined, but otherwise places
- *       no limits on the definition.  Refer to CFE Executive Services
- *       for specific information on limits related to object names.
- */
-#define FM_CHILD_SEM_NAME "FM_CHILD_SEM"
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM platform configuration parameters - table definitions        */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-/**
- * \brief Free Space Table Name - cFE object name
+ * \brief Monitor Table Name - cFE object name
  *
  *  \par Description:
  *       Table object name is required during table creation.
@@ -369,7 +322,8 @@
  *       no limits on the definition.  Refer to CFE Table Services
  *       for specific information on limits related to table names.
  */
-#define FM_TABLE_CFE_NAME "FreeSpace"
+#define FM_TABLE_CFE_NAME FM_INTERNAL_CFGVAL(TABLE_CFE_NAME)
+#define DEFAULT_FM_INTERNAL_TABLE_CFE_NAME "Monitor"
 
 /**
  * \brief Monitor Table Name - filename with path
@@ -382,7 +336,8 @@
  *       no limits on the definition.  If the named table does not
  *       exist or fails validation, the table load will fail.
  */
-#define FM_TABLE_DEF_NAME "/cf/fm_monitor.tbl"
+#define FM_TABLE_DEF_NAME FM_INTERNAL_CFGVAL(TABLE_DEF_NAME)
+#define DEFAULT_FM_INTERNAL_TABLE_DEF_NAME "/cf/fm_monitor.tbl"
 
 /**
  * \brief Monitor Table Name - filename without path
@@ -397,7 +352,8 @@
  *       valid then the make process may fail, or the table file may
  *       be unloadable to the target hardware.
  */
-#define FM_TABLE_FILENAME "fm_monitor.tbl"
+#define FM_TABLE_FILENAME FM_INTERNAL_CFGVAL(TABLE_FILENAME)
+#define DEFAULT_FM_INTERNAL_TABLE_FILENAME "fm_monitor.tbl"
 
 /**
  * \brief Free Space Table Description
@@ -412,38 +368,28 @@
  *       no limits on the definition.  Refer to cFE Table Services
  *       for limits related to table descriptive text.
  */
-#define FM_TABLE_DEF_DESC "FM File System Free Space Table"
+#define FM_TABLE_DEF_DESC FM_INTERNAL_CFGVAL(TABLE_DEF_DESC)
+#define DEFAULT_FM_INTERNAL_TABLE_DEF_DESC "FM File System Free Space Table"
 
 /**
- * \brief Number of Free Space Table Entries
+ * \brief Default Directory List Output Filename
  *
  *  \par Description:
- *       This value defines the number of entries in both the FM file system
- *       free space table and the FM file system free space telemetry packet.
- *       Note: this value does not define the number of file systems present
- *       or supported by the CFE-OSAL, the value only defines the number of
- *       file systems for which FM may be enabled to report free space data.
+ *       This definition is the default output filename used by the Get
+ *       Directory List to File command handler when the output filename
+ *       is not provided.  The default filename is used whenever the
+ *       commanded output filename is the empty string.
  *
  *  \par Limits:
- *       FM limits this value to be not less than 1 and not greater than 32.
+ *       The FM application does not place a limit on this configuration
+ *       parameter, however the symbol must be defined and the name will
+ *       be subject to the same verification tests as a commanded output
+ *       filename.  Set this parameter to the empty string if no default
+ *       filename is desired.
  */
-#define FM_TABLE_ENTRY_COUNT 8
-
-/**
- * \brief Table Data Validation Error Code
- *
- *  \par Description:
- *       Table data is verified during the table load process.  Should
- *       the validation process fail, this value will be returned by
- *       FM to cFE Table Services and displayed in an event message.
- *
- *  \par Limits:
- *       FM requires that this value be defined, but otherwise places
- *       no limits on the definition.  Refer to cFE Table Services
- *       for limits related to error return values.
- */
-#define FM_TABLE_VALIDATION_ERR (-1)
+#define FM_DIR_LIST_FILE_DEFNAME                   FM_INTERNAL_CFGVAL(DIR_LIST_FILE_DEFNAME)
+#define DEFAULT_FM_INTERNAL_DIR_LIST_FILE_DEFNAME "/ram/fm_dirlist.out"
 
 /**\}*/
 
-#endif
+#endif // FM_INTERNAL_CFG_H

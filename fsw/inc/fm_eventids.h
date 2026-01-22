@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -21,8 +20,8 @@
  * @file
  *   Specification for the CFS File Manager Event Identifiers.
  */
-#ifndef FM_EVENTS_H
-#define FM_EVENTS_H
+#ifndef FM_EVENTIDS_H
+#define FM_EVENTIDS_H
 
 /**
  * \defgroup cfsfmevents CFS File Manager Event IDs
@@ -203,16 +202,16 @@
 #define FM_NOOP_INF_EID 12
 
 /**
- * \brief FM No-op Command Length Invalid Event ID
+ * \brief FM Command Message Length Invalid Event ID
  *
  *  \par Type: ERROR
  *
- *  \par Cause
+ *  \par Cause:
  *
- *  This event message is generated upon receipt of a /FM_Noop
- *  command packet with an invalid length.
+ *  This event message is issued when command message is received with a message
+ *  length that doesn't match the expected value.
  */
-#define FM_NOOP_PKT_ERR_EID 13
+#define FM_CMD_LEN_ERR_EID 13
 
 /**
  * \brief FM Reset Counters Command Event ID
@@ -225,18 +224,6 @@
  *  /FM_ResetCtrs command.
  */
 #define FM_RESET_INF_EID 14
-
-/**
- * \brief FM Reset Counters Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_ResetCtrs
- *  command packet with an invalid length.
- */
-#define FM_RESET_PKT_ERR_EID 15
 
 /**
  * \brief FM Copy File Command Event ID
@@ -253,19 +240,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_COPY_CMD_INF_EID 16
-
-/**
- * \brief FM Copy File Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_Copy
- *  command packet with an invalid length.
- */
-#define FM_COPY_PKT_ERR_EID 17
+#define FM_COPY_CMD_INF_EID 15
 
 /**
  * \brief FM Copy File Command Overwrite Invalid Event ID
@@ -278,7 +253,7 @@
  *  command packet with an invalid overwrite argument.  Overwrite
  *  must be set to TRUE (one) or FALSE (zero).
  */
-#define FM_COPY_OVR_ERR_EID 18
+#define FM_COPY_OVR_ERR_EID 16
 
 /**
  * \brief FM Copy File Command OS Error Event ID
@@ -295,7 +270,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return value.
  */
-#define FM_COPY_OS_ERR_EID 19
+#define FM_COPY_OS_ERR_EID 17
 
 /**
  * \brief FM Move File Command Event ID
@@ -307,19 +282,7 @@
  *  This event message signals the successful completion of a
  *  /FM_Move command.
  */
-#define FM_MOVE_CMD_INF_EID 20
-
-/**
- * \brief FM Move File Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_Move
- *  command packet with an invalid length.
- */
-#define FM_MOVE_PKT_ERR_EID 21
+#define FM_MOVE_CMD_INF_EID 18
 
 /**
  * \brief FM Move File Command Overwrite Invalid Event ID
@@ -332,7 +295,7 @@
  *  command packet with an invalid overwrite argument.  Overwrite
  *  must be set to TRUE (one) or FALSE (zero).
  */
-#define FM_MOVE_OVR_ERR_EID 22
+#define FM_MOVE_OVR_ERR_EID 19
 
 /**
  * \brief FM Move File Command OS Error Event ID
@@ -349,7 +312,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return value.
  */
-#define FM_MOVE_OS_ERR_EID 23
+#define FM_MOVE_OS_ERR_EID 20
 
 /**
  * \brief FM Rename File Command Event ID
@@ -361,19 +324,7 @@
  *  This event message signals the successful completion of a
  *  /FM_Rename command.
  */
-#define FM_RENAME_CMD_INF_EID 24
-
-/**
- * \brief FM Rename File Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_Rename
- *  command packet with an invalid length.
- */
-#define FM_RENAME_PKT_ERR_EID 25
+#define FM_RENAME_CMD_INF_EID 21
 
 /**
  * \brief FM Rename File Command Overwrite Invalid Event ID
@@ -386,7 +337,7 @@
  *  command packet with an invalid overwrite argument.  Overwrite
  *  must be set to TRUE (one) or FALSE (zero).
  */
-#define FM_RENAME_OVR_ERR_EID 26
+#define FM_RENAME_OVR_ERR_EID 22
 
 /**
  * \brief FM Rename File Command OS Error Event ID
@@ -403,7 +354,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return value.
  */
-#define FM_RENAME_OS_ERR_EID 27
+#define FM_RENAME_OS_ERR_EID 23
 
 /**
  * \brief FM Delete File Command Event ID
@@ -415,19 +366,7 @@
  *  This event message signals the successful completion of a
  *  /FM_Delete command.
  */
-#define FM_DELETE_CMD_INF_EID 28
-
-/**
- * \brief FM Delete File Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_Delete
- *  command packet with an invalid length.
- */
-#define FM_DELETE_PKT_ERR_EID 29
+#define FM_DELETE_CMD_INF_EID 24
 
 /**
  * \brief FM Delete File Command OS Error Event ID
@@ -442,7 +381,7 @@
  *  OS-specific return value for an indication of what might have
  *  caused this error.
  */
-#define FM_DELETE_OS_ERR_EID 30
+#define FM_DELETE_OS_ERR_EID 25
 
 /**
  * \brief FM Delete All Files Command Event ID
@@ -459,7 +398,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_DELETE_ALL_CMD_INF_EID 31
+#define FM_DELETE_ALL_CMD_INF_EID 26
 
 /**
  * \brief FM Delete All Files Unable To Delete All Event ID
@@ -471,7 +410,7 @@
  *  This general event message is issued if for any reason some files
  *  could not be deleted.
  */
-#define FM_DELETE_ALL_FILES_ND_WARNING_EID 32
+#define FM_DELETE_ALL_FILES_ND_WARNING_EID 27
 
 /**
  * \brief FM Delete All Files Directories Skipped Event ID
@@ -483,19 +422,7 @@
  *  This general event message is issued if for any reason a directory
  *  skipped when processing a /FM_DeleteAll command.
  */
-#define FM_DELETE_ALL_SKIP_WARNING_EID 33
-
-/**
- * \brief FM Delete All Files Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_DeleteAll
- *  command packet with an invalid length.
- */
-#define FM_DELETE_ALL_PKT_ERR_EID 34
+#define FM_DELETE_ALL_SKIP_WARNING_EID 28
 
 /**
  * \brief FM Delete All Files Command OS Error Event ID
@@ -510,7 +437,7 @@
  *  return value for an indication of what might have caused this
  *  error.
  */
-#define FM_DELETE_ALL_OS_ERR_EID 35
+#define FM_DELETE_ALL_OS_ERR_EID 29
 
 /**
  * \brief FM Decompress File Command Event ID
@@ -527,19 +454,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_DECOM_CMD_INF_EID 36
-
-/**
- * \brief FM Decompress File Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_Decompress
- *  command packet with an invalid length.
- */
-#define FM_DECOM_PKT_ERR_EID 37
+#define FM_DECOM_CMD_INF_EID 30
 
 /**
  * \brief FM Decompress File Decompression Failed Event ID
@@ -554,7 +469,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_DECOM_CFE_ERR_EID 38
+#define FM_DECOM_CFE_ERR_EID 31
 
 /**
  * \brief FM Concat Files Command Event ID
@@ -571,19 +486,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_CONCAT_CMD_INF_EID 39
-
-/**
- * \brief FM Concat Files Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_Concat
- *  command packet with an invalid length.
- */
-#define FM_CONCAT_PKT_ERR_EID 40
+#define FM_CONCAT_CMD_INF_EID 32
 
 /**
  * \brief FM Concat Files Copy Failed Event ID
@@ -601,7 +504,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_CONCAT_OSCPY_ERR_EID 41
+#define FM_CONCAT_OSCPY_ERR_EID 33
 
 /**
  * \brief FM Concat Files Command Open Second Source File Failed Event ID
@@ -619,7 +522,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_CONCAT_OPEN_SRC2_ERR_EID 42
+#define FM_CONCAT_OPEN_SRC2_ERR_EID 34
 
 /**
  * \brief FM Concat Files Command Open Target File Failed Event ID
@@ -637,7 +540,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_CONCAT_OPEN_TGT_ERR_EID 43
+#define FM_CONCAT_OPEN_TGT_ERR_EID 35
 
 /**
  * \brief FM Concat Files Command Read Second Source File Failed Event ID
@@ -654,7 +557,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_CONCAT_OSRD_ERR_EID 44
+#define FM_CONCAT_OSRD_ERR_EID 36
 
 /**
  * \brief FM Concat Files Command Write Target File Failed Event ID
@@ -671,7 +574,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_CONCAT_OSWR_ERR_EID 45
+#define FM_CONCAT_OSWR_ERR_EID 37
 
 /**
  * \brief FM Get File Info Command Event ID
@@ -688,7 +591,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_GET_FILE_INFO_CMD_INF_EID 46
+#define FM_GET_FILE_INFO_CMD_INF_EID 38
 
 /**
  * \brief FM Get File Info Unable To Compute CRC File State Invalid Event ID
@@ -706,7 +609,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_GET_FILE_INFO_STATE_WARNING_EID 47
+#define FM_GET_FILE_INFO_STATE_WARNING_EID 39
 
 /**
  * \brief FM Get File Info Unable To Compute CRC, CRC Type Invalid Event ID
@@ -724,7 +627,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_GET_FILE_INFO_TYPE_WARNING_EID 48
+#define FM_GET_FILE_INFO_TYPE_WARNING_EID 40
 
 /**
  * \brief FM Get File Info Unable To Compute CRC File Open Failed Event ID
@@ -742,7 +645,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_GET_FILE_INFO_OPEN_ERR_EID 49
+#define FM_GET_FILE_INFO_OPEN_ERR_EID 41
 
 /**
  * \brief FM Get File Info Unable To Compute CRC File Read Failed Event ID
@@ -760,19 +663,7 @@
  *  specific return value for an indication of what might have caused
  *  this particular error.
  */
-#define FM_GET_FILE_INFO_READ_WARNING_EID 50
-
-/**
- * \brief FM Get File Info Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_GetFileInfo
- *  command packet with an invalid length.
- */
-#define FM_GET_FILE_INFO_PKT_ERR_EID 51
+#define FM_GET_FILE_INFO_READ_WARNING_EID 42
 
 /**
  * \brief FM Get File Info Command Filename Invalid Event ID
@@ -784,7 +675,7 @@
  *  This event message is generated upon receipt of a /FM_GetFileInfo
  *  command packet with an invalid filename.
  */
-#define FM_GET_FILE_INFO_SRC_ERR_EID 52
+#define FM_GET_FILE_INFO_SRC_ERR_EID 43
 
 /**
  * \brief FM Get Open Files Command Event ID
@@ -796,19 +687,7 @@
  *  This event message signals the successful completion of a
  *  /FM_GetOpenFiles command.
  */
-#define FM_GET_OPEN_FILES_CMD_INF_EID 53
-
-/**
- * \brief FM Get Open Files Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_GetOpenFiles
- *  command packet with an invalid length.
- */
-#define FM_GET_OPEN_FILES_PKT_ERR_EID 54
+#define FM_GET_OPEN_FILES_CMD_INF_EID 44
 
 /**
  * \brief FM Create Directory Command Event ID
@@ -820,19 +699,7 @@
  *  This event message signals the successful completion of a
  *  /FM_CreateDir command.
  */
-#define FM_CREATE_DIR_CMD_INF_EID 55
-
-/**
- * \brief FM Create Directory Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_CreateDir
- *  command packet with an invalid length.
- */
-#define FM_CREATE_DIR_PKT_ERR_EID 56
+#define FM_CREATE_DIR_CMD_INF_EID 45
 
 /**
  * \brief FM Create Directory Command OS Error Event ID
@@ -846,7 +713,7 @@
  *  indicated that the directory name is unused and appears to be
  *  valid. Refer to the OS specific return value.
  */
-#define FM_CREATE_DIR_OS_ERR_EID 57
+#define FM_CREATE_DIR_OS_ERR_EID 46
 
 /**
  * \brief FM Delete Directory Command Event ID
@@ -858,19 +725,7 @@
  *  This event message signals the successful completion of a
  *  /FM_DeleteDir command.
  */
-#define FM_DELETE_DIR_CMD_INF_EID 58
-
-/**
- * \brief FM Delete Directory Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_DeleteDir
- *  command packet with an invalid length.
- */
-#define FM_DELETE_DIR_PKT_ERR_EID 59
+#define FM_DELETE_DIR_CMD_INF_EID 47
 
 /**
  * \brief FM Delete Directory Command Failed Directory Not Empty Event ID
@@ -882,7 +737,7 @@
  *  This event message is generated upon receipt of a /FM_DeleteDir
  *  command packet that references a directory that is not empty.
  */
-#define FM_DELETE_DIR_EMPTY_ERR_EID 60
+#define FM_DELETE_DIR_EMPTY_ERR_EID 48
 
 /**
  * \brief FM Delete Directory, Direcotry Open Failed Event ID
@@ -896,7 +751,7 @@
  *  indicated that the directory exists and appears to be valid.
  *  Refer to the OS specific return values.
  */
-#define FM_DELETE_OPENDIR_OS_ERR_EID 61
+#define FM_DELETE_OPENDIR_OS_ERR_EID 49
 
 /**
  * \brief FM Delete Directory Remove Directory Failed Event ID
@@ -910,7 +765,7 @@
  *  indicated that the directory exists and appears to be valid.
  *  Refer to the OS specific return values.
  */
-#define FM_DELETE_RMDIR_OS_ERR_EID 62
+#define FM_DELETE_RMDIR_OS_ERR_EID 50
 
 /**
  * \brief FM Directory List To File Command Event ID
@@ -927,19 +782,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_GET_DIR_FILE_CMD_INF_EID 63
-
-/**
- * \brief FM Directory List To File Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_GetDirFile
- *  command packet with an invalid length.
- */
-#define FM_GET_DIR_FILE_PKT_ERR_EID 64
+#define FM_GET_DIR_FILE_CMD_INF_EID 51
 
 /**
  * \brief FM Directory List To File Command Combined Path and Name Too Long Event ID
@@ -957,7 +800,7 @@
  *  The /FM_GetDirFile command handler will not write information
  *  regarding this directory entry to the output file.
  */
-#define FM_GET_DIR_FILE_WARNING_EID 65
+#define FM_GET_DIR_FILE_WARNING_EID 52
 
 /**
  * \brief FM Directory List To File Directory Open Failed Event ID
@@ -974,7 +817,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return values.
  */
-#define FM_GET_DIR_FILE_OSOPENDIR_ERR_EID 66
+#define FM_GET_DIR_FILE_OSOPENDIR_ERR_EID 53
 
 /**
  * \brief FM Directory List To File Write Blank Stats Failed Event ID
@@ -992,7 +835,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return values.
  */
-#define FM_GET_DIR_FILE_WRBLANK_ERR_EID 67
+#define FM_GET_DIR_FILE_WRBLANK_ERR_EID 54
 
 /**
  * \brief FM Directory List To File Write Header Failed Event ID
@@ -1010,7 +853,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return values.
  */
-#define FM_GET_DIR_FILE_WRHDR_ERR_EID 68
+#define FM_GET_DIR_FILE_WRHDR_ERR_EID 55
 
 /**
  * \brief FM Directory List To File Create File Failed Event ID
@@ -1028,7 +871,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return values.
  */
-#define FM_GET_DIR_FILE_OSCREAT_ERR_EID 69
+#define FM_GET_DIR_FILE_OSCREAT_ERR_EID 56
 
 /**
  * \brief FM Directory List To File Write Entry Failed Event ID
@@ -1046,7 +889,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return values.
  */
-#define FM_GET_DIR_FILE_WRENTRY_ERR_EID 70
+#define FM_GET_DIR_FILE_WRENTRY_ERR_EID 57
 
 /**
  * \brief FM Directory List To File Write Update Stats Failed Event ID
@@ -1064,7 +907,7 @@
  *  sufficient free space for this operation. Then refer to the OS
  *  specific return values.
  */
-#define FM_GET_DIR_FILE_UPSTATS_ERR_EID 71
+#define FM_GET_DIR_FILE_UPSTATS_ERR_EID 58
 
 /**
  * \brief FM Directory List To Packet Command Event ID
@@ -1081,7 +924,7 @@
  *  occur until some time after the command was invoked.  However, this
  *  event message does signal the actual completion of the command.
  */
-#define FM_GET_DIR_PKT_CMD_INF_EID 72
+#define FM_GET_DIR_PKT_CMD_INF_EID 59
 
 /**
  * \brief FM Directory List To Packet Command Directory and Entry Too Long Event ID
@@ -1096,19 +939,7 @@
  *  might arise, but since we are copying both strings into a fixed
  *  length buffer, we must first verify the length.
  */
-#define FM_GET_DIR_PKT_WARNING_EID 73
-
-/**
- * \brief FM Directory List To Packet Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_GetDirPkt
- *  command packet with an invalid length.
- */
-#define FM_GET_DIR_PKT_PKT_ERR_EID 74
+#define FM_GET_DIR_PKT_WARNING_EID 60
 
 /**
  * \brief FM Directory List To Packet Directory Open Failed Event ID
@@ -1121,7 +952,7 @@
  *  function call.  The string data identifies the name of the
  *  directory or the directory entry.
  */
-#define FM_GET_DIR_PKT_OS_ERR_EID 75
+#define FM_GET_DIR_PKT_OS_ERR_EID 61
 
 /**
  * \brief FM Monitor Filesystem Command Event ID
@@ -1133,19 +964,7 @@
  *  This event message signals the successful completion of a
  *  /FM_MonitorFilesystemSpace command.
  */
-#define FM_MONITOR_FILESYSTEM_SPACE_CMD_INF_EID 76
-
-/**
- * \brief FM Get Free Space Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_GetFreeSpace
- *  command packet with an invalid length.
- */
-#define FM_GET_FREE_SPACE_PKT_ERR_EID 77
+#define FM_MONITOR_FILESYSTEM_SPACE_CMD_INF_EID 62
 
 /**
  * \brief FM Get Free Space Table Not Loaded Event ID
@@ -1158,7 +977,7 @@
  *  command packet when the FM file system free space table has not yet
  *  been loaded.
  */
-#define FM_GET_FREE_SPACE_TBL_ERR_EID 78
+#define FM_GET_FREE_SPACE_TBL_ERR_EID 63
 
 /**
  * \brief FM Set Table State Command Event ID
@@ -1170,19 +989,7 @@
  *  This event message signals the successful completion of a
  *  /FM_SetTableState command.
  */
-#define FM_SET_TABLE_STATE_CMD_EID 79
-
-/**
- * \brief FM Set Table State Command Length Invalid Event ID
- *
- *  \par Type: ERROR
- *
- *  \par Cause
- *
- *  This event message is generated upon receipt of a /FM_SetTableState
- *  command packet with an invalid length.
- */
-#define FM_SET_TABLE_STATE_PKT_ERR_EID 80
+#define FM_SET_TABLE_STATE_CMD_EID 64
 
 /**
  * \brief FM Set Table State Command Table Not Loaded Event ID
@@ -1195,7 +1002,7 @@
  *  command packet when the FM file system free space table has not yet
  *  been loaded.
  */
-#define FM_SET_TABLE_STATE_TBL_ERR_EID 81
+#define FM_SET_TABLE_STATE_TBL_ERR_EID 65
 
 /**
  * \brief FM Set Table State Command Index Invalid Event ID
@@ -1207,7 +1014,7 @@
  *  This event message is generated upon receipt of a FM_SetTableState
  *  command packet with an invalid table index argument.
  */
-#define FM_SET_TABLE_STATE_ARG_IDX_ERR_EID 82
+#define FM_SET_TABLE_STATE_ARG_IDX_ERR_EID 66
 
 /**
  * \brief FM Set Table State Command State Invalid Event ID
@@ -1219,7 +1026,7 @@
  *  This event message is generated upon receipt of a FM_SetTableState
  *  command packet with an invalid entry state argument.
  */
-#define FM_SET_TABLE_STATE_ARG_STATE_ERR_EID 83
+#define FM_SET_TABLE_STATE_ARG_STATE_ERR_EID 67
 
 /**
  * \brief FM Set Table State Command Unused Entry Event ID
@@ -1231,7 +1038,7 @@
  *  This event message is generated upon receipt of a /FM_SetTableState
  *  command packet that references an unused free space table entry.
  */
-#define FM_SET_TABLE_STATE_UNUSED_ERR_EID 84
+#define FM_SET_TABLE_STATE_UNUSED_ERR_EID 68
 
 /**
  * \brief FM Free Space Table Verification Failed Empty Name Event ID
@@ -1254,7 +1061,7 @@
  *  attempt to load a new table fails verification, the FM application will continue
  *  to use the previous table.
  */
-#define FM_TABLE_VERIFY_EMPTY_ERR_EID 85
+#define FM_TABLE_VERIFY_EMPTY_ERR_EID 69
 
 /**
  * \brief FM Free Space Table Verification Failed Name Too Long Event ID
@@ -1277,7 +1084,7 @@
  *  attempt to load a new table fails verification, the FM application will continue
  *  to use the previous table.
  */
-#define FM_TABLE_VERIFY_TOOLONG_ERR_EID 86
+#define FM_TABLE_VERIFY_TOOLONG_ERR_EID 70
 
 /**
  * \brief FM Free Space Table Verification Failed State Invalid Event ID
@@ -1300,7 +1107,7 @@
  *  attempt to load a new table fails verification, the FM application will continue
  *  to use the previous table.
  */
-#define FM_TABLE_VERIFY_BAD_STATE_ERR_EID 88
+#define FM_TABLE_VERIFY_BAD_STATE_ERR_EID 71
 
 /**
  * \brief FM Child Task Initialization Complete Event ID
@@ -1312,7 +1119,7 @@
  *  This event message signals the successful completion of the initialization
  *  process for the FM child task.
  */
-#define FM_CHILD_INIT_EID 89
+#define FM_CHILD_INIT_EID 72
 
 /**
  * \brief FM Child Task Initialization Create Semaphore Failed Event ID
@@ -1326,7 +1133,7 @@
  *  handed off to the child task for execution, will now be processed by the main FM
  *  application.
  */
-#define FM_CHILD_INIT_SEM_ERR_EID 90
+#define FM_CHILD_INIT_SEM_ERR_EID 73
 
 /**
  * \brief FM Child Task Initialization Create Queue Count Semaphore Failed Event ID
@@ -1339,7 +1146,7 @@
  *  semphore for the FM child task. Commands which would have otherwise been handed off
  *  to the child task for execution, will now be processed by the main FM application.
  */
-#define FM_CHILD_INIT_QSEM_ERR_EID 91
+#define FM_CHILD_INIT_QSEM_ERR_EID 74
 
 /**
  * \brief FM Child Task Initialization Create Task Failed Event ID
@@ -1352,7 +1159,7 @@
  *  priority FM child task.  Commands which would have otherwise been handed off
  *  to the child task for execution, will now be processed by the main FM application.
  */
-#define FM_CHILD_INIT_CREATE_ERR_EID 92
+#define FM_CHILD_INIT_CREATE_ERR_EID 75
 
 /**
  * \brief FM Child Task Termination Error Empty Queue Event ID
@@ -1366,7 +1173,7 @@
  *  indicating that the handshake between the main task and child task was
  *  broken.
  */
-#define FM_CHILD_TERM_EMPTYQ_ERR_EID 93
+#define FM_CHILD_TERM_EMPTYQ_ERR_EID 76
 
 /**
  * \brief FM Child Task Termination Error Invalid Queue Index Event ID
@@ -1379,7 +1186,7 @@
  *  and has terminated.  The error occurred because the child read index was
  *  invalid (larger than the child queue depth).
  */
-#define FM_CHILD_TERM_QIDX_ERR_EID 94
+#define FM_CHILD_TERM_QIDX_ERR_EID 77
 
 /**
  * \brief FM Child Task Termination Error Semaphore Take Failed Event ID
@@ -1392,7 +1199,7 @@
  *  and has terminated.  The error occurred when trying to take the child
  *  handshake semaphore.
  */
-#define FM_CHILD_TERM_SEM_ERR_EID 95
+#define FM_CHILD_TERM_SEM_ERR_EID 78
 
 /**
  * \brief FM Child Task Command Code Invalid Event ID
@@ -1407,7 +1214,7 @@
  *  or there has been some sort of data corruption that affected the interface data.
  *  It may be necessary to restart the FM application to resync the handshake interface.
  */
-#define FM_CHILD_EXE_ERR_EID 96
+#define FM_CHILD_EXE_ERR_EID 79
 
 /**
  *  \brief FM Free Space Table Validation Results Event ID
@@ -1421,7 +1228,7 @@
  *  when the default table is loaded at startup and also whenever a table validate
  *  command (that targets this table) is processed.
  */
-#define FM_TABLE_VERIFY_EID 97
+#define FM_TABLE_VERIFY_EID 80
 
 /**
  * \brief FM Set Permissions Command Length Invalid Event ID
@@ -1433,7 +1240,7 @@
  *  This event message is generated upon receipt of a /FM_SetPermissions
  *  command packet with an invalid length.
  */
-#define FM_SET_PERM_ERR_EID 98
+#define FM_SET_PERM_ERR_EID 81
 
 /**
  * \brief FM Set Permissions Command Event ID
@@ -1445,7 +1252,7 @@
  *  This event message signals the successful completion of a
  *  /FM_SetPerm command.
  */
-#define FM_SET_PERM_CMD_INF_EID 99
+#define FM_SET_PERM_CMD_INF_EID 82
 
 /**
  * \brief FM Set Permissions Command Chmod Error Event ID
@@ -1457,7 +1264,7 @@
  *  This event message is generated upon receipt of a /FM_SetPerm
  *  command packet with an invalid length.
  */
-#define FM_SET_PERM_OS_ERR_EID 100
+#define FM_SET_PERM_OS_ERR_EID 83
 
 /**
  * \brief FM Free Space Table Verification Failed Null Pointer Detected
@@ -1469,7 +1276,7 @@
  *  This event message occurs when the FM validate table callback function
  *  receives a NULL pointer as the input argument.
  */
-#define FM_TABLE_VERIFY_NULL_PTR_ERR_EID 101
+#define FM_TABLE_VERIFY_NULL_PTR_ERR_EID 84
 
 /**
  * \brief FM Main Loop Software Bus Returned NULL On Success Event ID
@@ -1481,7 +1288,7 @@
  *  This event message occurs if the Software Bus returns a success status
  *  in the main loop but provided a NULL pointer as the return argument.
  */
-#define FM_SB_RECEIVE_NULL_PTR_ERR_EID 102
+#define FM_SB_RECEIVE_NULL_PTR_ERR_EID 85
 
 /**
  * \brief FM Get Free Space Get File System Stats Failed Event ID
@@ -1493,7 +1300,7 @@
  *  This event message occurs if the free space for a file system cannot be read
  *  when processing the #FM_MonitorFilesystemSpaceCmd command.
  */
-#define FM_OS_SYS_STAT_ERR_EID 103
+#define FM_OS_SYS_STAT_ERR_EID 86
 
 /**
  * \brief FM Directory Size Estimate Failed Event ID
@@ -1505,7 +1312,7 @@
  * This event message occurs if the system encounters an error during
  * calculation of a directory size estimate
  */
-#define FM_DIRECTORY_ESTIMATE_ERR_EID 104
+#define FM_DIRECTORY_ESTIMATE_ERR_EID 87
 
 /** -------------------------------------------------------------
  *  NOTE: From here on, the event IDs will take the form of a
@@ -3462,4 +3269,4 @@
 
 /**\}*/
 
-#endif
+#endif /* FM_EVENTIDS_H */

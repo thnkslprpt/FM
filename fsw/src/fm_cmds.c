@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -24,28 +23,39 @@
  *  Provides functions for the execution of the FM ground commands
  */
 
+#include "fm_tbl.h"
 #include "cfe.h"
 #include "fm_msg.h"
 #include "fm_msgdefs.h"
 #include "fm_msgids.h"
-#include "fm_events.h"
+#include "fm_eventids.h"
 #include "fm_app.h"
+#include "fm_extern_typedefs.h"
 #include "fm_cmds.h"
 #include "fm_cmd_utils.h"
 #include "fm_perfids.h"
 #include "fm_platform_cfg.h"
 #include "fm_version.h"
-#include "fm_verify.h"
 
 #include <string.h>
 
-/**
- * \brief Internal Macro to access the internal payload structure of a message
- *
- * This is done as a macro so it can be applied consistently to all
- * message processing functions, based on the way FM defines its messages.
- */
-#define FM_GET_CMD_PAYLOAD(ptr, type) (&((const type *)(ptr))->Payload)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* FM application -- housekeeping request packet processor         */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+CFE_Status_t FM_SendHkCmd(const FM_SendHkCmd_t* Msg)
+{
+    CFE_TBL_Manage(FM_AppData.MonitorTableHandle);
+
+    FM_AppData.HkTlm.Payload.NumOpenFiles = FM_GetOpenFilesData(NULL);
+
+    CFE_SB_TimeStampMsg(CFE_MSG_PTR(FM_AppData.HkTlm.TelemetryHeader));
+    CFE_SB_TransmitMsg(CFE_MSG_PTR(FM_AppData.HkTlm.TelemetryHeader), true);
+
+    return CFE_SUCCESS;
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -53,14 +63,17 @@
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_NoopCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_NoopCmd(const FM_NoopCmd_t* Msg)
 {
-    const char *CmdText = "No-op";
+    FM_AppData.HkTlm.Payload.CommandCounter++;
+    CFE_EVS_SendEvent(FM_NOOP_INF_EID, CFE_EVS_EventType_INFORMATION,
+                        "No-op command: FM version %d.%d.%d.%d",
+                        FM_MAJOR_VERSION,
+                        FM_MINOR_VERSION,
+                        FM_REVISION,
+                        FM_MISSION_REV);
 
-    CFE_EVS_SendEvent(FM_NOOP_INF_EID, CFE_EVS_EventType_INFORMATION, "%s command: FM version %d.%d.%d.%d", CmdText,
-                      FM_MAJOR_VERSION, FM_MINOR_VERSION, FM_REVISION, FM_MISSION_REV);
-
-    return true;
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -69,21 +82,20 @@ bool FM_NoopCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_ResetCountersCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_ResetCountersCmd(const FM_ResetCountersCmd_t* Msg)
 {
-    const char *CmdText = "Reset Counters";
+    FM_AppData.HkTlm.Payload.CommandCounter    = 0;
+    FM_AppData.HkTlm.Payload.CommandErrCounter = 0;
 
-    FM_GlobalData.CommandCounter    = 0;
-    FM_GlobalData.CommandErrCounter = 0;
-
-    FM_GlobalData.ChildCmdCounter     = 0;
-    FM_GlobalData.ChildCmdErrCounter  = 0;
-    FM_GlobalData.ChildCmdWarnCounter = 0;
+    FM_AppData.HkTlm.Payload.ChildCmdCounter     = 0;
+    FM_AppData.HkTlm.Payload.ChildCmdErrCounter  = 0;
+    FM_AppData.HkTlm.Payload.ChildCmdWarnCounter = 0;
 
     /* Send command completion event (debug) */
-    CFE_EVS_SendEvent(FM_RESET_INF_EID, CFE_EVS_EventType_INFORMATION, "%s command", CmdText);
+    CFE_EVS_SendEvent(FM_RESET_INF_EID, CFE_EVS_EventType_INFORMATION,
+                        "Reset Counters command");
 
-    return true;
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -92,13 +104,13 @@ bool FM_ResetCountersCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_CopyFileCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_CopyFileCmd(const FM_CopyFileCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     const char *          CmdText = "Copy File";
     bool                  CommandResult;
 
-    const FM_OvwSourceTargetFilename_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_CopyFileCmd_t);
+    const FM_OvwSourceTargetFilename_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that overwrite argument is valid */
     CommandResult = FM_VerifyOverwrite(CmdPtr->Overwrite, FM_COPY_OVR_ERR_EID, CmdText);
@@ -131,21 +143,30 @@ bool FM_CopyFileCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_COPY_FILE_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->Source, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Source, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Target, CmdPtr->Target, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Target[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Target, CmdPtr->Target, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Target[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -154,13 +175,13 @@ bool FM_CopyFileCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_MoveFileCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_MoveFileCmd(const FM_MoveFileCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     const char *          CmdText = "Move File";
     bool                  CommandResult;
 
-    const FM_OvwSourceTargetFilename_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_MoveFileCmd_t);
+    const FM_OvwSourceTargetFilename_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that overwrite argument is valid */
     CommandResult = FM_VerifyOverwrite(CmdPtr->Overwrite, FM_MOVE_OVR_ERR_EID, CmdText);
@@ -193,22 +214,31 @@ bool FM_MoveFileCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_MOVE_FILE_CC;
 
-        strncpy(CmdArgs->Source1, CmdPtr->Source, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Source, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Target, CmdPtr->Target, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Target[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Target, CmdPtr->Target, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Target[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -217,13 +247,13 @@ bool FM_MoveFileCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_RenameFileCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_RenameFileCmd(const FM_RenameFileCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     const char *          CmdText = "Rename File";
     bool                  CommandResult;
 
-    const FM_SourceTargetFileName_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_RenameFileCmd_t);
+    const FM_SourceTargetFileName_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that source file exists and is not a directory */
     CommandResult = FM_VerifyFileExists(CmdPtr->Source, sizeof(CmdPtr->Source), FM_RENAME_SRC_BASE_EID, CmdText);
@@ -243,22 +273,31 @@ bool FM_RenameFileCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_RENAME_FILE_CC;
 
-        strncpy(CmdArgs->Source1, CmdPtr->Source, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Source, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Target, CmdPtr->Target, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Target[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Target, CmdPtr->Target, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Target[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -267,13 +306,13 @@ bool FM_RenameFileCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_DeleteFileCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_DeleteFileCmd(const FM_DeleteFileCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     const char *          CmdText = "Delete File";
     bool                  CommandResult;
 
-    const FM_SingleFilename_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_DeleteFileCmd_t);
+    const FM_SingleFilename_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that file exists, is not a directory and is not open */
     CommandResult = FM_VerifyFileClosed(CmdPtr->Filename, sizeof(CmdPtr->Filename), FM_DELETE_SRC_BASE_EID, CmdText);
@@ -287,18 +326,27 @@ bool FM_DeleteFileCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args - might be global or internal CC */
-        CFE_MSG_GetFcnCode(&BufPtr->Msg, &CmdArgs->CommandCode);
-        strncpy(CmdArgs->Source1, CmdPtr->Filename, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        CmdArgs->CommandCode = FM_DELETE_FILE_CC;
+        strncpy(CmdArgs->Source1, CmdPtr->Filename, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -307,14 +355,14 @@ bool FM_DeleteFileCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_DeleteAllFilesCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_DeleteAllFilesCmd(const FM_DeleteAllFilesCmd_t* Msg)
 {
     const char *          CmdText                     = "Delete All Files";
-    char                  DirWithSep[OS_MAX_PATH_LEN] = "\0";
+    char                  DirWithSep[CFE_MISSION_MAX_PATH_LEN] = "\0";
     FM_ChildQueueEntry_t *CmdArgs                     = NULL;
     bool                  CommandResult;
 
-    const FM_DirectoryName_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_DeleteAllFilesCmd_t);
+    const FM_DirectoryName_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that the directory exists */
     CommandResult =
@@ -323,9 +371,9 @@ bool FM_DeleteAllFilesCmd(const CFE_SB_Buffer_t *BufPtr)
     if (CommandResult == true)
     {
         /* Append a path separator to the end of the directory name */
-        strncpy(DirWithSep, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        DirWithSep[OS_MAX_PATH_LEN - 1] = '\0';
-        FM_AppendPathSep(DirWithSep, OS_MAX_PATH_LEN);
+        strncpy(DirWithSep, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        DirWithSep[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
+        FM_AppendPathSep(DirWithSep, CFE_MISSION_MAX_PATH_LEN);
 
         /* Check for lower priority child task availability */
         CommandResult = FM_VerifyChildTask(FM_DELETE_ALL_CHILD_BASE_EID, CmdText);
@@ -334,21 +382,30 @@ bool FM_DeleteAllFilesCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_DELETE_ALL_FILES_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Source2, DirWithSep, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source2[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source2, DirWithSep, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source2[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -357,13 +414,13 @@ bool FM_DeleteAllFilesCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_DecompressFileCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_DecompressFileCmd(const FM_DecompressFileCmd_t* Msg)
 {
     const char *          CmdText = "Decompress File";
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     bool                  CommandResult;
 
-    const FM_SourceTargetFileName_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_DecompressFileCmd_t);
+    const FM_SourceTargetFileName_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that source file exists, is not a directory and is not open */
     CommandResult = FM_VerifyFileClosed(CmdPtr->Source, sizeof(CmdPtr->Source), FM_DECOM_SRC_BASE_EID, CmdText);
@@ -383,18 +440,27 @@ bool FM_DecompressFileCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_DECOMPRESS_FILE_CC;
-        snprintf(CmdArgs->Source1, OS_MAX_PATH_LEN, "%s", CmdPtr->Source);
-        snprintf(CmdArgs->Target, OS_MAX_PATH_LEN, "%s", CmdPtr->Target);
+        snprintf(CmdArgs->Source1, CFE_MISSION_MAX_PATH_LEN, "%s", CmdPtr->Source);
+        snprintf(CmdArgs->Target, CFE_MISSION_MAX_PATH_LEN, "%s", CmdPtr->Target);
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -403,13 +469,13 @@ bool FM_DecompressFileCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_ConcatFilesCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_ConcatFilesCmd(const FM_ConcatFilesCmd_t* Msg)
 {
     const char *          CmdText = "Concat Files";
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     bool                  CommandResult;
 
-    const FM_TwoSourceOneTarget_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_ConcatFilesCmd_t);
+    const FM_TwoSourceOneTarget_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that source file #1 exists, is not a directory and is not open */
     CommandResult = FM_VerifyFileClosed(CmdPtr->Source1, sizeof(CmdPtr->Source1), FM_CONCAT_SRC1_BASE_EID, CmdText);
@@ -435,22 +501,31 @@ bool FM_ConcatFilesCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_CONCAT_FILES_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->Source1, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
-        strncpy(CmdArgs->Source2, CmdPtr->Source2, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source2[OS_MAX_PATH_LEN - 1] = '\0';
-        strncpy(CmdArgs->Target, CmdPtr->Target, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Target[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Source1, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source2, CmdPtr->Source2, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source2[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Target, CmdPtr->Target, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Target[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -459,14 +534,14 @@ bool FM_ConcatFilesCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_GetFileInfoCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_GetFileInfoCmd(const FM_GetFileInfoCmd_t* Msg)
 {
     const char *          CmdText       = "Get File Info";
     FM_ChildQueueEntry_t *CmdArgs       = NULL;
     bool                  CommandResult = true;
     uint32                FilenameState = FM_NAME_IS_INVALID;
 
-    const FM_FilenameAndCRC_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_GetFileInfoCmd_t);
+    const FM_FilenameAndCRC_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that the source name is valid for a file or directory */
     FilenameState =
@@ -486,26 +561,35 @@ bool FM_GetFileInfoCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_GET_FILE_INFO_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->Filename, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Filename, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         CmdArgs->FileInfoState = FilenameState;
         CmdArgs->FileInfoCRC   = CmdPtr->FileInfoCRC;
 
         /* Global data set during call to FM_VerifyNameValid */
-        CmdArgs->FileInfoSize = FM_GlobalData.FileStatSize;
-        CmdArgs->FileInfoTime = FM_GlobalData.FileStatTime;
-        CmdArgs->Mode         = FM_GlobalData.FileStatMode;
+        CmdArgs->FileInfoSize = FM_AppData.FileStatSize;
+        CmdArgs->FileInfoTime = FM_AppData.FileStatTime;
+        CmdArgs->Mode         = FM_AppData.FileStatMode;
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -514,15 +598,15 @@ bool FM_GetFileInfoCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_GetOpenFilesCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_GetOpenFilesCmd(const FM_GetOpenFilesCmd_t* Msg)
 {
     const char *CmdText      = "Get Open Files";
     uint32      NumOpenFiles = 0;
 
-    FM_OpenFilesPkt_Payload_t *ReportPtr = &FM_GlobalData.OpenFilesPkt.Payload;
+    FM_OpenFilesPkt_Payload_t *ReportPtr = &FM_AppData.OpenFilesPkt.Payload;
 
     /* Initialize open files telemetry packet */
-    CFE_MSG_Init(CFE_MSG_PTR(FM_GlobalData.OpenFilesPkt.TelemetryHeader), CFE_SB_ValueToMsgId(FM_OPEN_FILES_TLM_MID),
+    CFE_MSG_Init(CFE_MSG_PTR(FM_AppData.OpenFilesPkt.TelemetryHeader), CFE_SB_ValueToMsgId(FM_OPEN_FILES_TLM_MID),
                  sizeof(FM_OpenFilesPkt_t));
 
     /* Get list of open files and count */
@@ -531,13 +615,15 @@ bool FM_GetOpenFilesCmd(const CFE_SB_Buffer_t *BufPtr)
     ReportPtr->NumOpenFiles = NumOpenFiles;
 
     /* Timestamp and send open files telemetry packet */
-    CFE_SB_TimeStampMsg(CFE_MSG_PTR(FM_GlobalData.OpenFilesPkt.TelemetryHeader));
-    CFE_SB_TransmitMsg(CFE_MSG_PTR(FM_GlobalData.OpenFilesPkt.TelemetryHeader), true);
+    CFE_SB_TimeStampMsg(CFE_MSG_PTR(FM_AppData.OpenFilesPkt.TelemetryHeader));
+    CFE_SB_TransmitMsg(CFE_MSG_PTR(FM_AppData.OpenFilesPkt.TelemetryHeader), true);
 
     /* Send command completion event (info) */
     CFE_EVS_SendEvent(FM_GET_OPEN_FILES_CMD_INF_EID, CFE_EVS_EventType_INFORMATION, "%s command", CmdText);
 
-    return true;
+    FM_AppData.HkTlm.Payload.CommandCounter++;
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -546,13 +632,13 @@ bool FM_GetOpenFilesCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_CreateDirectoryCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_CreateDirectoryCmd(const FM_CreateDirectoryCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     const char *          CmdText = "Create Directory";
     bool                  CommandResult;
 
-    const FM_DirectoryName_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_CreateDirectoryCmd_t);
+    const FM_DirectoryName_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that the directory name is not already in use */
     CommandResult =
@@ -567,18 +653,27 @@ bool FM_CreateDirectoryCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_CREATE_DIRECTORY_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -587,13 +682,13 @@ bool FM_CreateDirectoryCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_DeleteDirectoryCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_DeleteDirectoryCmd(const FM_DeleteDirectoryCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs = NULL;
     const char *          CmdText = "Delete Directory";
     bool                  CommandResult;
 
-    const FM_DirectoryName_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_DeleteDirectoryCmd_t);
+    const FM_DirectoryName_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that the directory exists */
     CommandResult =
@@ -608,18 +703,27 @@ bool FM_DeleteDirectoryCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_DELETE_DIRECTORY_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -628,15 +732,15 @@ bool FM_DeleteDirectoryCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_GetDirListFileCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_GetDirListFileCmd(const FM_GetDirListFileCmd_t* Msg)
 {
     const char *          CmdText                     = "Directory List to File";
-    char                  DirWithSep[OS_MAX_PATH_LEN] = "\0";
-    char                  Filename[OS_MAX_PATH_LEN]   = "\0";
+    char                  DirWithSep[CFE_MISSION_MAX_PATH_LEN] = "\0";
+    char                  Filename[CFE_MISSION_MAX_PATH_LEN]   = "\0";
     FM_ChildQueueEntry_t *CmdArgs                     = NULL;
     bool                  CommandResult;
 
-    const FM_GetDirectoryToFile_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_GetDirListFileCmd_t);
+    const FM_GetDirectoryToFile_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that source directory exists */
     CommandResult =
@@ -669,30 +773,39 @@ bool FM_GetDirListFileCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Append a path separator to the end of the directory name */
-        strncpy(DirWithSep, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        DirWithSep[OS_MAX_PATH_LEN - 1] = '\0';
-        FM_AppendPathSep(DirWithSep, OS_MAX_PATH_LEN);
+        strncpy(DirWithSep, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        DirWithSep[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
+        FM_AppendPathSep(DirWithSep, CFE_MISSION_MAX_PATH_LEN);
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode     = FM_GET_DIR_LIST_FILE_CC;
         CmdArgs->GetSizeTimeMode = CmdPtr->GetSizeTimeMode;
-        strncpy(CmdArgs->Source1, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Source2, DirWithSep, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source2[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source2, DirWithSep, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source2[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Target, Filename, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Target[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Target, Filename, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Target[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -701,14 +814,14 @@ bool FM_GetDirListFileCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_GetDirListPktCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_GetDirListPktCmd(const FM_GetDirListPktCmd_t* Msg)
 {
     const char *          CmdText                     = "Directory List to Packet";
-    char                  DirWithSep[OS_MAX_PATH_LEN] = "\0";
+    char                  DirWithSep[CFE_MISSION_MAX_PATH_LEN] = "\0";
     FM_ChildQueueEntry_t *CmdArgs                     = NULL;
     bool                  CommandResult;
 
-    const FM_GetDirectoryToPkt_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_GetDirListPktCmd_t);
+    const FM_GetDirectoryToPkt_Payload_t *CmdPtr = &Msg->Payload;
 
     /* Verify that source directory exists */
     CommandResult =
@@ -723,28 +836,37 @@ bool FM_GetDirListPktCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
 
         /* Append a path separator to the end of the directory name */
-        strncpy(DirWithSep, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        DirWithSep[OS_MAX_PATH_LEN - 1] = '\0';
-        FM_AppendPathSep(DirWithSep, OS_MAX_PATH_LEN);
+        strncpy(DirWithSep, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        DirWithSep[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
+        FM_AppendPathSep(DirWithSep, CFE_MISSION_MAX_PATH_LEN);
 
         /* Set handshake queue command args */
         CmdArgs->CommandCode     = FM_GET_DIR_LIST_PKT_CC;
         CmdArgs->GetSizeTimeMode = CmdPtr->GetSizeTimeMode;
-        strncpy(CmdArgs->Source1, CmdPtr->Directory, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->Directory, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
 
-        strncpy(CmdArgs->Source2, DirWithSep, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source2[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source2, DirWithSep, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source2[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
         CmdArgs->DirListOffset                = CmdPtr->DirListOffset;
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -753,33 +875,39 @@ bool FM_GetDirListPktCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_MonitorFilesystemSpaceCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_MonitorFilesystemSpaceCmd(const FM_MonitorFilesystemSpaceCmd_t* Msg)
 {
     const char *CmdText       = "Get Free Space";
     bool        CommandResult = true;
     uint32      i             = 0;
     int32       OpResult;
+    CFE_Status_t Status;
 
     const FM_MonitorTableEntry_t *MonitorPtr;
     FM_MonitorReportEntry_t *     ReportPtr;
 
-    /* Verify that we have a pointer to the file system table data */
-    if (FM_GlobalData.MonitorTablePtr == NULL)
-    {
-        CommandResult = false;
+    /* Acquire pointer to file system free space table, also locks table */
+    Status = CFE_TBL_GetAddress((void *)&FM_AppData.MonitorTablePtr, FM_AppData.MonitorTableHandle);
 
+    /* Verify that we have a pointer to the file system table data */
+    if (Status == CFE_TBL_ERR_NEVER_LOADED)
+    {
+        /* Make sure we don't try to use the empty table buffer */
+        FM_AppData.MonitorTablePtr = NULL;
+
+        CommandResult = false;
         CFE_EVS_SendEvent(FM_GET_FREE_SPACE_TBL_ERR_EID, CFE_EVS_EventType_ERROR,
                           "%s error: file system free space table is not loaded", CmdText);
     }
     else
     {
         /* Initialize the file system free space telemetry packet */
-        CFE_MSG_Init(CFE_MSG_PTR(FM_GlobalData.MonitorReportPkt.TelemetryHeader),
-                     CFE_SB_ValueToMsgId(FM_FREE_SPACE_TLM_MID), sizeof(FM_MonitorReportPkt_t));
+        CFE_MSG_Init(CFE_MSG_PTR(FM_AppData.MonitorReportPkt.TelemetryHeader),
+                     CFE_SB_ValueToMsgId(FM_MONITOR_TLM_MID), sizeof(FM_MonitorReportPkt_t));
 
         /* Process enabled file system table entries */
-        MonitorPtr = FM_GlobalData.MonitorTablePtr->Entries;
-        ReportPtr  = FM_GlobalData.MonitorReportPkt.Payload.FileSys;
+        MonitorPtr = FM_AppData.MonitorTablePtr->Entries;
+        ReportPtr  = FM_AppData.MonitorReportPkt.Payload.FileSys;
         for (i = 0; i < FM_TABLE_ENTRY_COUNT; i++)
         {
             if (MonitorPtr->Type != FM_MonitorTableEntry_Type_UNUSED)
@@ -825,15 +953,30 @@ bool FM_MonitorFilesystemSpaceCmd(const CFE_SB_Buffer_t *BufPtr)
         }
 
         /* Timestamp and send file system free space telemetry packet */
-        CFE_SB_TimeStampMsg(CFE_MSG_PTR(FM_GlobalData.MonitorReportPkt.TelemetryHeader));
-        CFE_SB_TransmitMsg(CFE_MSG_PTR(FM_GlobalData.MonitorReportPkt.TelemetryHeader), true);
+        CFE_SB_TimeStampMsg(CFE_MSG_PTR(FM_AppData.MonitorReportPkt.TelemetryHeader));
+        CFE_SB_TransmitMsg(CFE_MSG_PTR(FM_AppData.MonitorReportPkt.TelemetryHeader), true);
 
         /* Send command completion event (info) */
         CFE_EVS_SendEvent(FM_MONITOR_FILESYSTEM_SPACE_CMD_INF_EID, CFE_EVS_EventType_INFORMATION, "%s command",
                           CmdText);
+
+        /* Release pointer to file system free space table */
+        CFE_TBL_ReleaseAddress(FM_AppData.MonitorTableHandle);
+
+        /* Prevent table pointer use while released */
+        FM_AppData.MonitorTablePtr = NULL;
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -842,18 +985,23 @@ bool FM_MonitorFilesystemSpaceCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_SetTableStateCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_SetTableStateCmd(const FM_SetTableStateCmd_t* Msg)
 {
     const char *CmdText       = "Set Table State";
     bool        CommandResult = true;
+    CFE_Status_t Status;
 
-    const FM_TableIndexAndState_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_SetTableStateCmd_t);
+    const FM_TableIndexAndState_Payload_t *CmdPtr = &Msg->Payload;
 
-    if (FM_GlobalData.MonitorTablePtr == NULL)
+    /* Acquire pointer to file system free space table */
+    Status = CFE_TBL_GetAddress((void *)&FM_AppData.MonitorTablePtr, FM_AppData.MonitorTableHandle);
+    if (Status == CFE_TBL_ERR_NEVER_LOADED)
     {
+        /* Make sure we don't try to use the empty table buffer */
+        FM_AppData.MonitorTablePtr = NULL;
+
         /* File system table has not been loaded */
         CommandResult = false;
-
         CFE_EVS_SendEvent(FM_SET_TABLE_STATE_TBL_ERR_EID, CFE_EVS_EventType_ERROR,
                           "%s error: file system free space table is not loaded", CmdText);
     }
@@ -874,7 +1022,7 @@ bool FM_SetTableStateCmd(const CFE_SB_Buffer_t *BufPtr)
         CFE_EVS_SendEvent(FM_SET_TABLE_STATE_ARG_STATE_ERR_EID, CFE_EVS_EventType_ERROR,
                           "%s error: invalid command argument: state = %d", CmdText, (int)CmdPtr->TableEntryState);
     }
-    else if (FM_GlobalData.MonitorTablePtr->Entries[CmdPtr->TableEntryIndex].Type == FM_MonitorTableEntry_Type_UNUSED)
+    else if (FM_AppData.MonitorTablePtr->Entries[CmdPtr->TableEntryIndex].Type == FM_MonitorTableEntry_Type_UNUSED)
     {
         /* Current table entry state must not be unused */
         CommandResult = false;
@@ -886,10 +1034,10 @@ bool FM_SetTableStateCmd(const CFE_SB_Buffer_t *BufPtr)
     else
     {
         /* Update the table entry state as commanded */
-        FM_GlobalData.MonitorTablePtr->Entries[CmdPtr->TableEntryIndex].Enabled = CmdPtr->TableEntryState;
+        FM_AppData.MonitorTablePtr->Entries[CmdPtr->TableEntryIndex].Enabled = CmdPtr->TableEntryState;
 
         /* Notify cFE that we have modified the table data */
-        CFE_TBL_Modified(FM_GlobalData.MonitorTableHandle);
+        CFE_TBL_Modified(FM_AppData.MonitorTableHandle);
 
         /* Send command completion event (info) */
         CFE_EVS_SendEvent(FM_SET_TABLE_STATE_CMD_EID, CFE_EVS_EventType_INFORMATION,
@@ -897,7 +1045,22 @@ bool FM_SetTableStateCmd(const CFE_SB_Buffer_t *BufPtr)
                           (int)CmdPtr->TableEntryState);
     }
 
-    return CommandResult;
+    /* Release pointer to file system free space table */
+    CFE_TBL_ReleaseAddress(FM_AppData.MonitorTableHandle);
+
+    /* Prevent table pointer use while released */
+    FM_AppData.MonitorTablePtr = NULL;
+
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -906,14 +1069,14 @@ bool FM_SetTableStateCmd(const CFE_SB_Buffer_t *BufPtr)
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_SetPermissionsCmd(const CFE_SB_Buffer_t *BufPtr)
+CFE_Status_t FM_SetPermissionsCmd(const FM_SetPermissionsCmd_t* Msg)
 {
     FM_ChildQueueEntry_t *CmdArgs       = NULL;
     const char *          CmdText       = "Set Permissions";
     bool                  CommandResult = true;
     uint32                FilenameState = FM_NAME_IS_INVALID;
 
-    const FM_FilenameAndMode_Payload_t *CmdPtr = FM_GET_CMD_PAYLOAD(BufPtr, FM_SetPermissionsCmd_t);
+    const FM_FilenameAndMode_Payload_t *CmdPtr = &Msg->Payload;
 
     FilenameState = FM_VerifyNameValid(CmdPtr->FileName, sizeof(CmdPtr->FileName), 0, CmdText);
 
@@ -931,16 +1094,25 @@ bool FM_SetPermissionsCmd(const CFE_SB_Buffer_t *BufPtr)
     /* Prepare command for child task execution */
     if (CommandResult == true)
     {
-        CmdArgs = &FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex];
+        CmdArgs = &FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex];
         /* Set handshake queue command args */
         CmdArgs->CommandCode = FM_SET_PERMISSIONS_CC;
-        strncpy(CmdArgs->Source1, CmdPtr->FileName, OS_MAX_PATH_LEN - 1);
-        CmdArgs->Source1[OS_MAX_PATH_LEN - 1] = '\0';
+        strncpy(CmdArgs->Source1, CmdPtr->FileName, CFE_MISSION_MAX_PATH_LEN - 1);
+        CmdArgs->Source1[CFE_MISSION_MAX_PATH_LEN - 1] = '\0';
         CmdArgs->Mode                         = CmdPtr->Mode;
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
     }
 
-    return CommandResult;
+    if (CommandResult == true)
+    {
+        FM_AppData.HkTlm.Payload.CommandCounter++;
+    }
+    else
+    {
+        FM_AppData.HkTlm.Payload.CommandErrCounter++;
+    }
+
+    return CFE_SUCCESS;
 }
