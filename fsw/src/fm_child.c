@@ -439,9 +439,9 @@ void FM_ChildDeleteAllFilesCmd(FM_ChildQueueEntry_t *CmdArgs)
     const char *CmdText = "Delete All Files";
     osal_id_t   DirId   = OS_OBJECT_ID_UNDEFINED;
     os_dirent_t DirEntry;
-    int32       OS_Status                     = OS_SUCCESS;
-    uint32      FilenameState                 = FM_NAME_IS_INVALID;
-    uint32      NameLength                    = 0;
+    int32       OS_Status;
+    uint32      FilenameState;
+    uint32      NameLength;
     uint32      DeleteCount                   = 0;
     uint32      FilesNotDeletedCount          = 0;
     uint32      DirectoriesSkippedCount       = 0;
@@ -629,13 +629,13 @@ void FM_ChildConcatFilesCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
     const char *CmdText        = "Concat Files";
     bool        ConcatResult   = false;
-    bool        CopyInProgress = false;
-    int32       LoopCount      = 0;
-    int32       OS_Status      = OS_SUCCESS;
+    bool        CopyInProgress;
+    int32       LoopCount;
+    int32       OS_Status;
     osal_id_t   FileHandleSrc  = OS_OBJECT_ID_UNDEFINED;
     osal_id_t   FileHandleTgt  = OS_OBJECT_ID_UNDEFINED;
-    int32       BytesRead      = 0;
-    int32       BytesWritten   = 0;
+    int32       BytesRead;
+    int32       BytesWritten;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -771,12 +771,12 @@ void FM_ChildConcatFilesCmd(const FM_ChildQueueEntry_t *CmdArgs)
 void FM_ChildFileInfoCmd(FM_ChildQueueEntry_t *CmdArgs)
 {
     const char *CmdText    = "Get File Info";
-    bool        GettingCRC = false;
+    bool        GettingCRC;
     uint32      CurrentCRC = 0;
     int32       LoopCount  = 0;
-    int32       BytesRead  = 0;
+    int32       BytesRead;
     osal_id_t   FileHandle = OS_OBJECT_ID_UNDEFINED;
-    int32       Status     = 0;
+    int32       Status;
 
     FM_FileInfoPkt_Payload_t *ReportPtr;
 
@@ -1049,7 +1049,7 @@ void FM_ChildDeleteDirectoryCmd(const FM_ChildQueueEntry_t *CmdArgs)
 void FM_ChildDirListFileCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
     const char *CmdText    = "Directory List to File";
-    bool        Result     = false;
+    bool        Result;
     osal_id_t   FileHandle = OS_OBJECT_ID_UNDEFINED;
     osal_id_t   DirId      = OS_OBJECT_ID_UNDEFINED;
     int32       Status     = 0;
@@ -1110,13 +1110,13 @@ void FM_ChildDirListPktCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
     const char *       CmdText                      = "Directory List to Packet";
     char               LogicalName[CFE_MISSION_MAX_PATH_LEN] = "\0";
-    bool               StillProcessing              = true;
+    bool               StillProcessing;
     osal_id_t          DirId                        = OS_OBJECT_ID_UNDEFINED;
     os_dirent_t        DirEntry;
-    int32              ListIndex      = 0;
+    int32              ListIndex;
     FM_DirListEntry_t *ListEntry      = NULL;
-    size_t             PathLength     = 0;
-    size_t             EntryLength    = 0;
+    size_t             PathLength;
+    size_t             EntryLength;
     int32              FilesTillSleep = FM_CHILD_STAT_SLEEP_FILECOUNT;
     int32              Status;
 
@@ -1241,7 +1241,7 @@ void FM_ChildDirListPktCmd(const FM_ChildQueueEntry_t *CmdArgs)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void FM_ChildSetPermissionsCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
-    int32       OS_Status = OS_SUCCESS;
+    int32       OS_Status;
     const char *CmdText   = "Set Permissions";
 
     OS_Status = OS_chmod(CmdArgs->Source1, CmdArgs->Mode);
@@ -1281,8 +1281,8 @@ bool FM_ChildDirListFileInit(osal_id_t *FileHandlePtr, const char *Directory, co
     bool            CommandResult = true;
     CFE_FS_Header_t FileHeader;
     osal_id_t       FileHandle   = OS_OBJECT_ID_UNDEFINED;
-    int32           BytesWritten = 0;
-    int32           Status       = 0;
+    int32           BytesWritten;
+    int32           Status;
 
     /* Initialize the standard cFE File Header for the Directory Listing File */
     CFE_FS_InitHeader(&FileHeader, CmdText, FM_DIR_LIST_FILE_SUBTYPE);
@@ -1356,7 +1356,7 @@ bool FM_ChildDirListFileInit(osal_id_t *FileHandlePtr, const char *Directory, co
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 void FM_ChildDirListFileLoop(osal_id_t DirId, osal_id_t FileHandle, const char *Directory, const char *DirWithSep,
-                             const char *Filename, uint8 getSizeTimeMode)
+                             const char *Filename, uint8 GetSizeTimeMode)
 {
     const char *      CmdText                   = "Directory List to File";
     size_t            WriteLength               = sizeof(FM_DirListEntry_t);
@@ -1364,11 +1364,11 @@ void FM_ChildDirListFileLoop(osal_id_t DirId, osal_id_t FileHandle, const char *
     bool              CommandResult             = true;
     uint32            DirEntries                = 0;
     uint32            FileEntries               = 0;
-    size_t            EntryLength               = 0;
-    size_t            PathLength                = 0;
-    int32             BytesWritten              = 0;
+    size_t            EntryLength;
+    size_t            PathLength;
+    int32             BytesWritten;
     int32             FilesTillSleep            = FM_CHILD_STAT_SLEEP_FILECOUNT;
-    int32             Status                    = 0;
+    int32             Status;
     char              TempName[CFE_MISSION_MAX_PATH_LEN] = "\0";
     os_dirent_t       DirEntry;
     FM_DirListEntry_t DirListData;
@@ -1417,7 +1417,7 @@ void FM_ChildDirListFileLoop(osal_id_t DirId, osal_id_t FileHandle, const char *
                     memset(&DirListData, 0, sizeof(DirListData));
                     strncpy(DirListData.EntryName, OS_DIRENTRY_NAME(DirEntry), sizeof(DirListData.EntryName) - 1);
 
-                    FM_ChildSleepStat(TempName, &DirListData, &FilesTillSleep, getSizeTimeMode);
+                    FM_ChildSleepStat(TempName, &DirListData, &FilesTillSleep, GetSizeTimeMode);
 
                     /* Write directory list file entry to output file */
                     BytesWritten = OS_write(FileHandle, &DirListData, WriteLength);
@@ -1525,10 +1525,10 @@ int32 FM_ChildSizeTimeMode(const char *Filename, uint32 *FileSize, uint32 *FileT
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 void FM_ChildSleepStat(const char *Filename, FM_DirListEntry_t *DirListData, int32 *FilesTillSleep,
-                       bool getSizeTimeMode)
+                       bool GetSizeTimeMode)
 {
     /* Check if command requested size and time */
-    if (getSizeTimeMode == true)
+    if (GetSizeTimeMode == true)
     {
         if (*FilesTillSleep <= 0)
         {

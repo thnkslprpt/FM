@@ -155,10 +155,7 @@ CFE_Status_t FM_CopyFileCmd(const FM_CopyFileCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -227,10 +224,7 @@ CFE_Status_t FM_MoveFileCmd(const FM_MoveFileCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -286,10 +280,7 @@ CFE_Status_t FM_RenameFileCmd(const FM_RenameFileCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -335,10 +326,7 @@ CFE_Status_t FM_DeleteFileCmd(const FM_DeleteFileCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -394,10 +382,7 @@ CFE_Status_t FM_DeleteAllFilesCmd(const FM_DeleteAllFilesCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -449,10 +434,7 @@ CFE_Status_t FM_DecompressFileCmd(const FM_DecompressFileCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -514,10 +496,7 @@ CFE_Status_t FM_ConcatFilesCmd(const FM_ConcatFilesCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -578,10 +557,7 @@ CFE_Status_t FM_GetFileInfoCmd(const FM_GetFileInfoCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -662,10 +638,7 @@ CFE_Status_t FM_CreateDirectoryCmd(const FM_CreateDirectoryCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -712,10 +685,7 @@ CFE_Status_t FM_DeleteDirectoryCmd(const FM_DeleteDirectoryCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -794,10 +764,7 @@ CFE_Status_t FM_GetDirListFileCmd(const FM_GetDirListFileCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -855,10 +822,7 @@ CFE_Status_t FM_GetDirListPktCmd(const FM_GetDirListPktCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
@@ -879,7 +843,7 @@ CFE_Status_t FM_MonitorFilesystemSpaceCmd(const FM_MonitorFilesystemSpaceCmd_t* 
 {
     const char *CmdText       = "Get Free Space";
     bool        CommandResult = true;
-    uint32      i             = 0;
+    uint32      i;
     int32       OpResult;
     CFE_Status_t Status;
 
@@ -1103,10 +1067,7 @@ CFE_Status_t FM_SetPermissionsCmd(const FM_SetPermissionsCmd_t* Msg)
 
         /* Invoke lower priority child task */
         FM_InvokeChildTask();
-    }
 
-    if (CommandResult == true)
-    {
         FM_AppData.HkTlm.Payload.CommandCounter++;
     }
     else
