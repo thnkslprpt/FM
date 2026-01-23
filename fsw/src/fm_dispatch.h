@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -28,6 +27,24 @@
 #include "fm_msg.h"
 
 /**
+ *  \brief Verify Command Packet Length Function
+ *
+ *  \par Description
+ *       This function is invoked from each of the command handlers to verify the
+ *       length of the command packet.
+ *
+ *  \par Assumptions, External Events, and Notes:
+ *
+ *  \param [in]  MsgPtr         Pointer to Message
+ *  \param [in]  ExpectedLength Expected packet length (command specific)
+ *
+ *  \return Boolean valid packet length response
+ *  \retval true  Packet length valid
+ *  \retval false Packet length invalid
+ */
+bool FM_VerifyCmdLength(const CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength);
+
+/**
  *  \brief Process Input Command Packets
  *
  *  \par Description
@@ -38,9 +55,9 @@
  *
  *  \param [in] BufPtr Pointer to Software Bus message buffer.
  *
- *  \sa #FM_SendHkCmd, #FM_ProcessCmd
+ *  \sa #FM_SendHkCmd, #FM_ProcessGroundCommand
  */
-void FM_ProcessPkt(const CFE_SB_Buffer_t *BufPtr);
+void FM_TaskPipe(const CFE_SB_Buffer_t *BufPtr);
 
 /**
  *  \brief Process FM Ground Commands
@@ -53,51 +70,6 @@ void FM_ProcessPkt(const CFE_SB_Buffer_t *BufPtr);
  *
  *  \param [in]  BufPtr Pointer to Software Bus message buffer.
  */
-void FM_ProcessCmd(const CFE_SB_Buffer_t *BufPtr);
-
-/**
- *  \brief Verify Command Packet Length Function
- *
- *  \par Description
- *       This function is invoked from each of the command handlers to verify the
- *       length of the command packet.
- *
- *  \par Assumptions, External Events, and Notes:
- *
- *  \param [in]  MsgPtr         Pointer to Message
- *  \param [in]  ExpectedLength Expected packet length (command specific)
- *  \param [in]  EventID        Error event ID (command specific)
- *  \param [in]  CmdText        Error event text (command specific)
- *
- *  \return Boolean valid packet length response
- *  \retval true  Packet length valid
- *  \retval false Packet length invalid
- */
-bool FM_IsValidCmdPktLength(const CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength, uint32 EventID,
-                            const char *CmdText);
-
-/*
- * Internal dispatch function for each command -
- * These are declared here so they can be directly invoked by the unit test for coverage
- */
-bool FM_NoopVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_ResetCountersVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_CopyFileVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_MoveFileVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_RenameFileVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_DeleteFileVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_DeleteAllFilesVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_DecompressFileVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_ConcatFilesVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_GetFileInfoVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_GetOpenFilesVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_CreateDirectoryVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_DeleteDirectoryVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_GetDirListFileVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_GetDirListPktVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_MonitorFilesystemSpaceVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_SetTableStateVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-bool FM_SetPermissionsVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
-void FM_SendHkVerifyDispatch(const CFE_SB_Buffer_t *BufPtr);
+void FM_ProcessGroundCommand(const CFE_SB_Buffer_t *BufPtr);
 
 #endif

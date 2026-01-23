@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -49,16 +48,4 @@ void FM_AppMain(void)
 {
 
     UT_GenStub_Execute(FM_AppMain, Basic, NULL);
-}
-
-/*
- * ----------------------------------------------------
- * Generated stub function for FM_SendHkCmd()
- * ----------------------------------------------------
- */
-void FM_SendHkCmd(const CFE_SB_Buffer_t *BufPtr)
-{
-    UT_GenStub_AddParam(FM_SendHkCmd, const CFE_SB_Buffer_t *, BufPtr);
-
-    UT_GenStub_Execute(FM_SendHkCmd, Basic, NULL);
 }

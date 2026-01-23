@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -20,10 +19,10 @@
 /**
  * @file
  *
- * Auto-Generated stub implementations for functions defined in fm_tbl header
+ * Auto-Generated stub implementations for functions defined in fm_table_utils header
  */
 
-#include "fm_tbl.h"
+#include "fm_table_utils.h"
 #include "utgenstub.h"
 
 /*

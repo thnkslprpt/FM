@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -26,6 +25,26 @@
 
 #include "cfe.h"
 #include "fm_msg.h"
+
+/**
+ *  \brief Child Task Interface command queue entry structure
+ */
+typedef struct
+{
+    CFE_MSG_FcnCode_t CommandCode;              /** \brief Command code - identifies the command */
+    uint16            Padding1;                 /** \brief Structure padding to align to 32-bit boundaries */
+    uint32            DirListOffset;            /** \brief Starting entry for dir list commands */
+    uint32            FileInfoState;            /** \brief File info state */
+    uint32            FileInfoSize;             /** \brief File info size */
+    uint32            FileInfoTime;             /** \brief File info time */
+    uint32            FileInfoCRC;              /** \brief File info CRC method */
+    char              Source1[CFE_MISSION_MAX_PATH_LEN]; /** \brief First source file or directory name command argument */
+    char              Source2[CFE_MISSION_MAX_PATH_LEN]; /** \brief Second source filename command argument */
+    char              Target[CFE_MISSION_MAX_PATH_LEN];  /** \brief Target filename command argument */
+    uint8             GetSizeTimeMode;          /** \brief Whether to invoke stat call for size and time (CPU intensive) */
+    uint8             Padding2[3];              /** \brief Structure padding to align to 32-bit boundaries */
+    uint32            Mode;                     /** \brief File Mode */
+} FM_ChildQueueEntry_t;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */

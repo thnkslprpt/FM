@@ -15,8 +15,7 @@ set(APP_SRC_FILES
   fsw/src/fm_app.c
   fsw/src/fm_cmds.c
   fsw/src/fm_child.c
-  fsw/src/fm_dispatch.c
-  fsw/src/fm_tbl.c
+  fsw/src/fm_table_utils.c
 )
 
 # If compression features are enabled, choose the adapter based on the selected implementation
@@ -39,6 +38,16 @@ else()
   # FM_INCLUDE_COMPRESSION set to "OFF" or "FALSE" - compression features are not enabled
   list(APPEND FM_OPTION_SRC_FILES fsw/src/fm_compression_none.c)
 
+endif()
+
+if (CFE_EDS_ENABLED)
+  list(APPEND APP_SRC_FILES
+    fsw/src/fm_eds_dispatch.c
+  )
+else()
+  list(APPEND APP_SRC_FILES
+    fsw/src/fm_dispatch.c
+  )
 endif()
 
 # Create the app module

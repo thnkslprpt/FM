@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -31,7 +30,8 @@
 #include "fm_cmd_utils.h"
 #include "fm_child.h"
 #include "fm_perfids.h"
-#include "fm_events.h"
+#include "fm_eventids.h"
+#include "fm_extern_typedefs.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -80,14 +80,14 @@ static void LoadOpenFileData(osal_id_t ObjId, void *CallbackArg)
         {
             if (OS_FDGetInfo(ObjId, &FdProp) == OS_SUCCESS)
             {
-                strncpy(OpenFilesData[OpenFileCount].LogicalName, FdProp.Path, OS_MAX_PATH_LEN);
+                strncpy(OpenFilesData[OpenFileCount].LogicalName, FdProp.Path, CFE_MISSION_MAX_PATH_LEN);
 
                 /* Get the name of the application that opened the file */
                 memset(&TaskInfo, 0, sizeof(TaskInfo));
 
                 if (OS_TaskGetInfo(FdProp.User, &TaskInfo) == OS_SUCCESS)
                 {
-                    strncpy(OpenFilesData[OpenFileCount].AppName, (char *)TaskInfo.name, OS_MAX_API_NAME);
+                    strncpy(OpenFilesData[OpenFileCount].AppName, (char *)TaskInfo.name, CFE_MISSION_MAX_API_LEN);
                 }
             }
         }
@@ -132,12 +132,12 @@ static void SearchOpenFileData(osal_id_t ObjId, void *CallbackArg)
     }
 }
 
-uint32 FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInfoCmd)
+FM_FileNameStates_Enum_t FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInfoCmd)
 {
-    os_fstat_t FileStatus;
-    uint32     FilenameState   = FM_NAME_IS_INVALID;
-    bool       FilenameIsValid = false;
-    int32      StringLength;
+    os_fstat_t          FileStatus;
+    FM_FileNameStates_Enum_t FilenameState   = FM_NAME_IS_INVALID;
+    bool                FilenameIsValid = false;
+    int32               StringLength;
 
     memset(&FileStatus, 0, sizeof(FileStatus));
 
@@ -188,9 +188,9 @@ uint32 FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInf
             /* Save the last modify time and file size for File Info commands */
             if (FileInfoCmd)
             {
-                FM_GlobalData.FileStatTime = OS_FILESTAT_TIME(FileStatus);
-                FM_GlobalData.FileStatSize = OS_FILESTAT_SIZE(FileStatus);
-                FM_GlobalData.FileStatMode = OS_FILESTAT_MODE(FileStatus);
+                FM_AppData.FileStatTime = OS_FILESTAT_TIME(FileStatus);
+                FM_AppData.FileStatSize = OS_FILESTAT_SIZE(FileStatus);
+                FM_AppData.FileStatMode = OS_FILESTAT_MODE(FileStatus);
             }
         }
         else
@@ -201,9 +201,9 @@ uint32 FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInf
             /* Save the last modify time and file size for File Info commands */
             if (FileInfoCmd)
             {
-                FM_GlobalData.FileStatSize = 0;
-                FM_GlobalData.FileStatTime = 0;
-                FM_GlobalData.FileStatMode = 0;
+                FM_AppData.FileStatSize = 0;
+                FM_AppData.FileStatTime = 0;
+                FM_AppData.FileStatMode = 0;
             }
         }
     }
@@ -217,10 +217,10 @@ uint32 FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInf
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-uint32 FM_VerifyNameValid(const char *Name, size_t BufferSize, uint32 EventID, const char *CmdText)
+FM_FileNameStates_Enum_t FM_VerifyNameValid(const char *Name, size_t BufferSize, uint32 EventID, const char *CmdText)
 {
-    char   LocalFile[1 + OS_MAX_PATH_LEN];
-    uint32 FilenameState = FM_NAME_IS_INVALID;
+    char   LocalFile[1 + CFE_MISSION_MAX_PATH_LEN];
+    FM_FileNameStates_Enum_t FilenameState = FM_NAME_IS_INVALID;
 
     /* Looking for filename state != FM_NAME_IS_INVALID */
     FilenameState = FM_GetFilenameState(Name, BufferSize, true);
@@ -244,14 +244,14 @@ uint32 FM_VerifyNameValid(const char *Name, size_t BufferSize, uint32 EventID, c
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-bool FM_VerifyFileState(FM_File_States State, const char *Filename, size_t BufferSize, uint32 EventID,
+bool FM_VerifyFileState(FM_FileStates_Enum_t State, const char *Filename, size_t BufferSize, uint32 EventID,
                         const char *CmdText)
 {
     bool        Result        = false;
     uint32      FilenameState = FM_NAME_IS_INVALID;
     uint32      ErrorCode     = FM_FNAME_INVALID_EID_OFFSET;
     const char *ErrorDesc     = "";
-    char        LocalFile[1 + OS_MAX_PATH_LEN];
+    char        LocalFile[1 + CFE_MISSION_MAX_PATH_LEN];
 
     /* Get state of the filename */
     FilenameState = FM_GetFilenameState(Filename, BufferSize, false);
@@ -425,10 +425,10 @@ bool FM_VerifyChildTask(uint32 EventID, const char *CmdText)
     bool Result = false;
 
     /* Copy of child queue count that child task cannot change */
-    uint8 LocalQueueCount = FM_GlobalData.ChildQueueCount;
+    uint8 LocalQueueCount = FM_AppData.HkTlm.Payload.ChildQueueCount;
 
     /* Verify child task is active and queue interface is healthy */
-    if (!OS_ObjectIdDefined(FM_GlobalData.ChildSemaphore))
+    if (!OS_ObjectIdDefined(FM_AppData.ChildSemaphore))
     {
         CFE_EVS_SendEvent((EventID + FM_CHILD_DISABLED_EID_OFFSET), CFE_EVS_EventType_ERROR,
                           "%s error: child task is disabled", CmdText);
@@ -444,18 +444,18 @@ bool FM_VerifyChildTask(uint32 EventID, const char *CmdText)
         /* Queue full - cannot add another command */
         Result = false;
     }
-    else if ((LocalQueueCount > FM_CHILD_QUEUE_DEPTH) || (FM_GlobalData.ChildWriteIndex >= FM_CHILD_QUEUE_DEPTH))
+    else if ((LocalQueueCount > FM_CHILD_QUEUE_DEPTH) || (FM_AppData.ChildWriteIndex >= FM_CHILD_QUEUE_DEPTH))
     {
         CFE_EVS_SendEvent((EventID + FM_CHILD_BROKEN_EID_OFFSET), CFE_EVS_EventType_ERROR,
                           "%s error: child task interface is broken: count = %d, index = %d", CmdText, LocalQueueCount,
-                          FM_GlobalData.ChildWriteIndex);
+                          FM_AppData.ChildWriteIndex);
 
         /* Queue broken - cannot add another command */
         Result = false;
     }
     else
     {
-        memset(&FM_GlobalData.ChildQueue[FM_GlobalData.ChildWriteIndex], 0, sizeof(FM_GlobalData.ChildQueue[0]));
+        memset(&FM_AppData.ChildQueue[FM_AppData.ChildWriteIndex], 0, sizeof(FM_AppData.ChildQueue[0]));
 
         /* OK to add another command to the queue */
         Result = true;
@@ -473,23 +473,23 @@ bool FM_VerifyChildTask(uint32 EventID, const char *CmdText)
 void FM_InvokeChildTask(void)
 {
     /* Update callers queue index */
-    FM_GlobalData.ChildWriteIndex++;
+    FM_AppData.ChildWriteIndex++;
 
-    if (FM_GlobalData.ChildWriteIndex >= FM_CHILD_QUEUE_DEPTH)
+    if (FM_AppData.ChildWriteIndex >= FM_CHILD_QUEUE_DEPTH)
     {
-        FM_GlobalData.ChildWriteIndex = 0;
+        FM_AppData.ChildWriteIndex = 0;
     }
 
     /* Prevent parent/child updating queue counter at same time */
-    OS_MutSemTake(FM_GlobalData.ChildQueueCountSem);
-    FM_GlobalData.ChildQueueCount++;
-    OS_MutSemGive(FM_GlobalData.ChildQueueCountSem);
+    OS_MutSemTake(FM_AppData.ChildQueueCountSem);
+    FM_AppData.HkTlm.Payload.ChildQueueCount++;
+    OS_MutSemGive(FM_AppData.ChildQueueCountSem);
 
     /* Does the child task still have a semaphore? */
-    if (OS_ObjectIdDefined(FM_GlobalData.ChildSemaphore))
+    if (OS_ObjectIdDefined(FM_AppData.ChildSemaphore))
     {
         /* Signal child task to call command handler */
-        OS_CountSemGive(FM_GlobalData.ChildSemaphore);
+        OS_CountSemGive(FM_AppData.ChildSemaphore);
     }
 }
 
@@ -508,7 +508,7 @@ void FM_AppendPathSep(char *Directory, uint32 BufferSize)
     */
     size_t StringLength = 0;
 
-    StringLength = OS_strnlen(Directory, OS_MAX_PATH_LEN);
+    StringLength = OS_strnlen(Directory, CFE_MISSION_MAX_PATH_LEN);
 
     /* Do nothing if string already ends with a path separator */
     if ((StringLength != 0) && (Directory[StringLength - 1] != '/'))
@@ -570,7 +570,7 @@ CFE_Status_t FM_GetDirectorySpaceEstimate(const char *Directory, uint64 *BlockCo
     os_fstat_t    FileStat;
     osal_status_t OS_Status;
     CFE_Status_t  Result;
-    char          FullPath[OS_MAX_PATH_LEN];
+    char          FullPath[CFE_MISSION_MAX_PATH_LEN];
     uint64        TotalBytes;
     size_t        DirLen;
 
@@ -578,7 +578,7 @@ CFE_Status_t FM_GetDirectorySpaceEstimate(const char *Directory, uint64 *BlockCo
 
     memset(&DirEntry, 0, sizeof(DirEntry));
     snprintf(FullPath, sizeof(FullPath), "%s", Directory);
-    DirLen = OS_strnlen(FullPath, OS_MAX_PATH_LEN);
+    DirLen = OS_strnlen(FullPath, CFE_MISSION_MAX_PATH_LEN);
     if (DirLen < (sizeof(FullPath) - 2))
     {
         FullPath[DirLen] = '/';

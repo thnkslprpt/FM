@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -35,16 +34,17 @@
 #include "fm_msgdefs.h"
 #include "fm_msgids.h"
 #include "fm_app.h"
-#include "fm_tbl.h"
+#include "fm_table_utils.h"
 #include "fm_child.h"
 #include "fm_cmds.h"
 #include "fm_cmd_utils.h"
 #include "fm_dispatch.h"
-#include "fm_events.h"
+#include "fm_eventids.h"
 #include "fm_perfids.h"
 #include "fm_platform_cfg.h"
 #include "fm_version.h"
 #include "fm_verify.h"
+#include "fm_compression.h"
 
 #include <string.h>
 
@@ -54,7 +54,7 @@
 /*                                                                 */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-FM_GlobalData_t FM_GlobalData;
+FM_AppData_t FM_AppData;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -96,7 +96,7 @@ void FM_AppMain(void)
         CFE_ES_PerfLogExit(FM_APPMAIN_PERF_ID);
 
         /* Wait for the next Software Bus message */
-        Result = CFE_SB_ReceiveBuffer(&BufPtr, FM_GlobalData.CmdPipe, FM_SB_TIMEOUT);
+        Result = CFE_SB_ReceiveBuffer(&BufPtr, FM_AppData.CmdPipe, FM_SB_TIMEOUT);
 
         /* Performance Log (start time counter) */
         CFE_ES_PerfLogEntry(FM_APPMAIN_PERF_ID);
@@ -106,7 +106,7 @@ void FM_AppMain(void)
             if (BufPtr != NULL)
             {
                 /* Process Software Bus message */
-                FM_ProcessPkt(BufPtr);
+                FM_TaskPipe(BufPtr);
             }
             else
             {
@@ -118,15 +118,7 @@ void FM_AppMain(void)
                 RunStatus = CFE_ES_RunStatus_APP_ERROR;
             }
         }
-        else if (Result == CFE_SB_TIME_OUT)
-        {
-            /* Allow cFE the chance to manage tables.  This is typically done
-             * during the housekeeping cycle, but if housekeeping is done at
-             * less than a 1Hz rate the table management is done here as well. */
-            FM_ReleaseTablePointers();
-            FM_AcquireTablePointers();
-        }
-        else
+        else if (Result != CFE_SB_TIME_OUT && Result != CFE_SB_NO_MESSAGE)
         {
             /* Process Software Bus error */
             CFE_EVS_SendEvent(FM_SB_RECEIVE_ERR_EID, CFE_EVS_EventType_ERROR,
@@ -171,7 +163,12 @@ CFE_Status_t FM_AppInit(void)
     CFE_Status_t Result  = CFE_SUCCESS;
 
     /* Initialize global data  */
-    memset(&FM_GlobalData, 0, sizeof(FM_GlobalData));
+    memset(&FM_AppData, 0, sizeof(FM_AppData));
+
+    /* Initialize housekeeping telemetry message */
+    CFE_MSG_Init(CFE_MSG_PTR(FM_AppData.HkTlm.TelemetryHeader),
+                 CFE_SB_ValueToMsgId(FM_HK_TLM_MID),
+                 sizeof(FM_HkTlm_t));
 
     /* Register for event services */
     Result = CFE_EVS_Register(NULL, 0, CFE_EVS_EventFilter_BINARY);
@@ -183,7 +180,7 @@ CFE_Status_t FM_AppInit(void)
     else
     {
         /* Create Software Bus message pipe */
-        Result = CFE_SB_CreatePipe(&FM_GlobalData.CmdPipe, FM_APP_PIPE_DEPTH, FM_APP_PIPE_NAME);
+        Result = CFE_SB_CreatePipe(&FM_AppData.CmdPipe, FM_APP_PIPE_DEPTH, FM_APP_PIPE_NAME);
         if (Result != CFE_SUCCESS)
         {
             CFE_EVS_SendEvent(FM_CR_PIPE_ERR_EID, CFE_EVS_EventType_ERROR, "%s create SB input pipe: result = 0x%08X",
@@ -192,7 +189,7 @@ CFE_Status_t FM_AppInit(void)
         else
         {
             /* Subscribe to Housekeeping request commands */
-            Result = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(FM_SEND_HK_MID), FM_GlobalData.CmdPipe);
+            Result = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(FM_SEND_HK_MID), FM_AppData.CmdPipe);
 
             if (Result != CFE_SUCCESS)
             {
@@ -206,7 +203,7 @@ CFE_Status_t FM_AppInit(void)
     if (Result == CFE_SUCCESS)
     {
         /* Subscribe to FM ground command packets */
-        Result = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(FM_CMD_MID), FM_GlobalData.CmdPipe);
+        Result = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(FM_CMD_MID), FM_AppData.CmdPipe);
 
         if (Result != CFE_SUCCESS)
         {
@@ -239,44 +236,4 @@ CFE_Status_t FM_AppInit(void)
     FM_CompressionService_Init();
 
     return Result;
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                                                 */
-/* FM application -- housekeeping request packet processor         */
-/*                                                                 */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void FM_SendHkCmd(const CFE_SB_Buffer_t *BufPtr)
-{
-    FM_HousekeepingPkt_Payload_t *PayloadPtr;
-
-    FM_ReleaseTablePointers();
-
-    FM_AcquireTablePointers();
-
-    /* Initialize housekeeping telemetry message */
-    CFE_MSG_Init(CFE_MSG_PTR(FM_GlobalData.HousekeepingPkt.TelemetryHeader), CFE_SB_ValueToMsgId(FM_HK_TLM_MID),
-                 sizeof(FM_HousekeepingPkt_t));
-
-    PayloadPtr = &FM_GlobalData.HousekeepingPkt.Payload;
-
-    /* Report application command counters */
-    PayloadPtr->CommandCounter    = FM_GlobalData.CommandCounter;
-    PayloadPtr->CommandErrCounter = FM_GlobalData.CommandErrCounter;
-
-    PayloadPtr->NumOpenFiles = FM_GetOpenFilesData(NULL);
-
-    /* Report child task command counters */
-    PayloadPtr->ChildCmdCounter     = FM_GlobalData.ChildCmdCounter;
-    PayloadPtr->ChildCmdErrCounter  = FM_GlobalData.ChildCmdErrCounter;
-    PayloadPtr->ChildCmdWarnCounter = FM_GlobalData.ChildCmdWarnCounter;
-
-    PayloadPtr->ChildQueueCount = FM_GlobalData.ChildQueueCount;
-
-    /* Report current and previous commands executed by the child task */
-    PayloadPtr->ChildCurrentCC  = FM_GlobalData.ChildCurrentCC;
-    PayloadPtr->ChildPreviousCC = FM_GlobalData.ChildPreviousCC;
-
-    CFE_SB_TimeStampMsg(CFE_MSG_PTR(FM_GlobalData.HousekeepingPkt.TelemetryHeader));
-    CFE_SB_TransmitMsg(CFE_MSG_PTR(FM_GlobalData.HousekeepingPkt.TelemetryHeader), true);
 }

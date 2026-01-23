@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -22,28 +21,17 @@
  *   Specification for the CFS File Manager command utility
  *   functions.
  */
+
 #ifndef FM_CMD_UTILS_H
 #define FM_CMD_UTILS_H
 
+/* ======== */
+/* Includes */
+/* ======== */
+
 #include "cfe.h"
-#include "fm_msg.h"
-
-/************************************************************************
- * Type Definitions
- ************************************************************************/
-
-/**
- *  \brief  FM enum used for verifying file states
- */
-typedef enum
-{
-    FM_FILE_CLOSED,  /**< \brief FM File Is Closed */
-    FM_FILE_EXISTS,  /**< \brief FM File Exists */
-    FM_FILE_NOEXIST, /**< \brief FM File Does Not Exist */
-    FM_FILE_NOTOPEN, /**< \brief FM File Is Not Open */
-    FM_DIR_EXISTS,   /**< \brief FM Directory Exists */
-    FM_DIR_NOEXIST   /**< \brief FM Directory Does Not Exist */
-} FM_File_States;
+#include "fm_msgdefs.h"
+#include "fm_internal_cfg.h"
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                                                 */
@@ -114,7 +102,7 @@ uint32 FM_GetOpenFilesData(FM_OpenFilesEntry_t *OpenFilesData);
  *
  *  \sa #OS_stat, #OS_FDGetInfo
  */
-uint32 FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInfoCmd);
+FM_FileNameStates_Enum_t FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInfoCmd);
 
 /**
  *  \brief Verify Name Function
@@ -139,7 +127,7 @@ uint32 FM_GetFilenameState(const char *Filename, size_t BufferSize, bool FileInf
  *
  *  \sa #FM_GetFilenameState
  */
-uint32 FM_VerifyNameValid(const char *Name, size_t BufferSize, uint32 EventID, const char *CmdText);
+FM_FileNameStates_Enum_t FM_VerifyNameValid(const char *Name, size_t BufferSize, uint32 EventID, const char *CmdText);
 
 /**
  *  \brief Verify File State Function
@@ -162,7 +150,7 @@ uint32 FM_VerifyNameValid(const char *Name, size_t BufferSize, uint32 EventID, c
  *
  *  \sa #FM_GetFilenameState
  */
-bool FM_VerifyFileState(FM_File_States State, const char *Filename, size_t BufferSize, uint32 EventID,
+bool FM_VerifyFileState(FM_FileStates_Enum_t State, const char *Filename, size_t BufferSize, uint32 EventID,
                         const char *CmdText);
 
 /**

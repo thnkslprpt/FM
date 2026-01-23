@@ -1,8 +1,7 @@
 /************************************************************************
- * NASA Docket No. GSC-18,918-1, and identified as “Core Flight
- * Software System (cFS) File Manager Application Version 2.6.1”
+ * NASA Docket No. GSC-19,200-1, and identified as "cFS Draco"
  *
- * Copyright (c) 2021 United States Government as represented by the
+ * Copyright (c) 2023 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -54,7 +53,7 @@ static FM_Decompressor_State_t FM_FSLIB_DecompressState;
 CFE_Status_t FM_CompressionService_Init(void)
 {
     memset(&FM_FSLIB_DecompressState, 0, sizeof(FM_FSLIB_DecompressState));
-    FM_GlobalData.DecompressorStatePtr = &FM_FSLIB_DecompressState;
+    FM_AppData.DecompressorStatePtr = &FM_FSLIB_DecompressState;
     return CFE_SUCCESS;
 }
 
