@@ -506,7 +506,7 @@ void FM_AppendPathSep(char *Directory, uint32 BufferSize)
     **   the string is both non-zero and less than the size
     **   of the string buffer.
     */
-    size_t StringLength = 0;
+    size_t StringLength;
 
     StringLength = OS_strnlen(Directory, CFE_MISSION_MAX_PATH_LEN);
 
@@ -571,10 +571,8 @@ CFE_Status_t FM_GetDirectorySpaceEstimate(const char *Directory, uint64 *BlockCo
     osal_status_t OS_Status;
     CFE_Status_t  Result;
     char          FullPath[CFE_MISSION_MAX_PATH_LEN];
-    uint64        TotalBytes;
+    uint64        TotalBytes = 0;
     size_t        DirLen;
-
-    TotalBytes = 0;
 
     memset(&DirEntry, 0, sizeof(DirEntry));
     snprintf(FullPath, sizeof(FullPath), "%s", Directory);

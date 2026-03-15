@@ -576,8 +576,8 @@ CFE_Status_t FM_GetFileInfoCmd(const FM_GetFileInfoCmd_t* Msg)
 
 CFE_Status_t FM_GetOpenFilesCmd(const FM_GetOpenFilesCmd_t* Msg)
 {
-    const char *CmdText      = "Get Open Files";
-    uint32      NumOpenFiles = 0;
+    const char *CmdText = "Get Open Files";
+    uint32      NumOpenFiles;
 
     FM_OpenFilesPkt_Payload_t *ReportPtr = &FM_AppData.OpenFilesPkt.Payload;
 

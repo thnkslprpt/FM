@@ -58,8 +58,8 @@ CFE_Status_t FM_ChildInit(void)
 {
     int32        TaskTextLen               = CFE_MISSION_MAX_PATH_LEN;
     char         TaskText[CFE_MISSION_MAX_PATH_LEN] = "\0";
-    CFE_Status_t Result                    = CFE_SUCCESS;
-    uint32       TaskEID                   = 0;
+    CFE_Status_t Result;
+    uint32       TaskEID = 0;
 
     /* Create counting semaphore (given by parent to wake-up child) */
     Result = OS_CountSemCreate(&FM_AppData.ChildSemaphore, FM_CHILD_SEM_NAME, 0, 0);
@@ -279,8 +279,8 @@ void FM_ChildProcess(void)
 
 void FM_ChildCopyCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
-    const char *CmdText   = "Copy File";
-    int32       OS_Status = OS_SUCCESS;
+    const char *CmdText = "Copy File";
+    int32       OS_Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -319,8 +319,8 @@ void FM_ChildCopyCmd(const FM_ChildQueueEntry_t *CmdArgs)
 
 void FM_ChildMoveCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
-    const char *CmdText   = "Move File";
-    int32       OS_Status = OS_SUCCESS;
+    const char *CmdText = "Move File";
+    int32       OS_Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -358,8 +358,8 @@ void FM_ChildMoveCmd(const FM_ChildQueueEntry_t *CmdArgs)
 
 void FM_ChildRenameCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
-    const char *CmdText   = "Rename File";
-    int32       OS_Status = OS_SUCCESS;
+    const char *CmdText = "Rename File";
+    int32       OS_Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -397,8 +397,8 @@ void FM_ChildRenameCmd(const FM_ChildQueueEntry_t *CmdArgs)
 
 void FM_ChildDeleteCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
-    const char *CmdText   = "Delete File";
-    int32       OS_Status = OS_SUCCESS;
+    const char *CmdText = "Delete File";
+    int32       OS_Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -588,7 +588,7 @@ void FM_ChildDeleteAllFilesCmd(FM_ChildQueueEntry_t *CmdArgs)
 void FM_ChildDecompressFileCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
     const char * CmdText    = "Decompress File";
-    CFE_Status_t CFE_Status = CFE_SUCCESS;
+    CFE_Status_t CFE_Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -931,8 +931,8 @@ void FM_ChildFileInfoCmd(FM_ChildQueueEntry_t *CmdArgs)
 
 void FM_ChildCreateDirectoryCmd(const FM_ChildQueueEntry_t *CmdArgs)
 {
-    const char *CmdText   = "Create Directory";
-    int32       OS_Status = OS_SUCCESS;
+    const char *CmdText = "Create Directory";
+    int32       OS_Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -974,7 +974,7 @@ void FM_ChildDeleteDirectoryCmd(const FM_ChildQueueEntry_t *CmdArgs)
     bool        RemoveTheDir = true;
     osal_id_t   DirId        = OS_OBJECT_ID_UNDEFINED;
     os_dirent_t DirEntry;
-    int32       OS_Status = OS_SUCCESS;
+    int32       OS_Status;
 
     memset(&DirEntry, 0, sizeof(DirEntry));
 
@@ -1052,7 +1052,7 @@ void FM_ChildDirListFileCmd(const FM_ChildQueueEntry_t *CmdArgs)
     bool        Result;
     osal_id_t   FileHandle = OS_OBJECT_ID_UNDEFINED;
     osal_id_t   DirId      = OS_OBJECT_ID_UNDEFINED;
-    int32       Status     = 0;
+    int32       Status;
 
     /* Report current child task activity */
     FM_AppData.HkTlm.Payload.ChildCurrentCC = CmdArgs->CommandCode;
@@ -1495,7 +1495,7 @@ void FM_ChildDirListFileLoop(osal_id_t DirId, osal_id_t FileHandle, const char *
 
 int32 FM_ChildSizeTimeMode(const char *Filename, uint32 *FileSize, uint32 *FileTime, uint32 *FileMode)
 {
-    int32      Result = OS_SUCCESS;
+    int32      Result;
     os_fstat_t FileStatus;
 
     memset(&FileStatus, 0, sizeof(FileStatus));
